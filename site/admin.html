@@ -51,9 +51,18 @@
   .admin-msg { min-height: 18px; font-size: 12.5px; color: var(--faint); margin-top: 10px; }
   .admin-msg.is-error { color: #f2b8b8; }
   .badge { display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: 999px; background: var(--accent-soft); border: 1px solid var(--line); font-size: 11px; color: var(--accent); }
+  .admin-actions { display: flex; align-items: center; gap: 10px; }
+  .admin-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 8px; }
+  .admin-stat { border: 1px solid var(--line); border-radius: 14px; background: var(--surface); padding: 14px 16px; display: grid; gap: 2px; }
+  .admin-stat span { font-size: 12px; color: var(--faint); }
+  .admin-stat strong { font-size: 22px; font-weight: 650; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .admin-stats-note { margin: 0 0 16px; font-size: 12px; color: var(--faint); }
   @media (max-width: 560px) {
     .admin-wrap { padding: 24px 16px 60px; }
     .gate { margin-top: 6vh; padding: 20px; }
+    .admin-stats { gap: 8px; }
+    .admin-stat { padding: 12px; }
+    .admin-stat strong { font-size: 19px; }
   }
 </style>
 </head>
@@ -62,29 +71,41 @@
   <header class="admin-head">
     <div class="admin-brand">
       <img src="assets/icon.png" alt="" width="30" height="30">
-      <div><strong>Arus</strong><br><span>Laporan bug</span></div>
+      <div><strong>Arus</strong><br><span data-i18n="header.subtitle">Laporan bug</span></div>
     </div>
-    <button type="button" class="admin-btn" id="lock-btn" hidden>Kunci lagi</button>
+    <div class="admin-actions">
+      <div class="lang-switch" role="group" aria-label="Bahasa / Language">
+        <button type="button" data-lang-value="id" class="is-active" aria-pressed="true">ID</button>
+        <button type="button" data-lang-value="en" aria-pressed="false">EN</button>
+      </div>
+      <button type="button" class="admin-btn" id="lock-btn" hidden data-i18n="lock">Kunci lagi</button>
+    </div>
   </header>
 
   <section class="gate" id="gate" aria-labelledby="gate-title">
-    <h1 id="gate-title">Masuk ke laporan</h1>
-    <p>Halaman ini hanya untuk pemilik Arus. Kunci disimpan di tab ini dan hilang saat tab ditutup.</p>
+    <h1 id="gate-title" data-i18n="gate.title">Masuk ke laporan</h1>
+    <p data-i18n="gate.body">Halaman ini hanya untuk pemilik Arus. Kunci disimpan di tab ini dan hilang saat tab ditutup.</p>
     <form id="gate-form">
-      <label for="gate-key">Kunci akses</label>
+      <label for="gate-key" data-i18n="gate.label">Kunci akses</label>
       <input id="gate-key" type="password" autocomplete="current-password" spellcheck="false" required>
-      <button type="submit" id="gate-submit">Buka laporan</button>
+      <button type="submit" id="gate-submit" data-i18n="gate.submit">Buka laporan</button>
     </form>
-    <p class="gate-note">Kunci diatur lewat env REPORTS_KEY di Vercel.</p>
+    <p class="gate-note" data-i18n="gate.note">Kunci diatur lewat env REPORTS_KEY di Vercel.</p>
     <p class="admin-msg" id="gate-msg" role="status"></p>
   </section>
 
   <section id="dash" hidden>
+    <div class="admin-stats">
+      <div class="admin-stat"><span data-i18n="stats.downloads">Unduhan</span><strong id="stat-downloads">—</strong></div>
+      <div class="admin-stat"><span data-i18n="stats.stars">Bintang</span><strong id="stat-stars">—</strong></div>
+      <div class="admin-stat"><span data-i18n="stats.forks">Fork</span><strong id="stat-forks">—</strong></div>
+    </div>
+    <p class="admin-stats-note" id="stats-note">Mengambil statistik…</p>
     <div class="admin-bar">
       <span class="count" id="rep-count">0 laporan</span>
       <input class="admin-search" id="rep-search" type="search" placeholder="Cari isi laporan atau versi" aria-label="Cari laporan">
-      <button type="button" class="admin-btn" id="rep-refresh">Muat ulang</button>
-      <button type="button" class="admin-btn" id="rep-copy-all">Salin semua</button>
+      <button type="button" class="admin-btn" id="rep-refresh" data-i18n="reload">Muat ulang</button>
+      <button type="button" class="admin-btn" id="rep-copy-all" data-i18n="copy.all">Salin semua</button>
     </div>
     <p class="admin-msg" id="rep-msg" role="status"></p>
     <div class="rep-list" id="rep-list"></div>
@@ -94,7 +115,9 @@
 <script>
 (() => {
   const KEY_STORE = 'arus.reports.key';
-  const state = { key: '', reports: [], filter: '', busy: false };
+  const LANG_KEY = 'arus.site.lang';
+  const REFRESH_MS = 60 * 1000;
+  const state = { key: '', reports: [], filter: '', busy: false, loaded: false, lang: 'id', stats: null, statsAt: 0, statsFailed: false };
   const $ = (s) => document.querySelector(s);
   const gate = $('#gate');
   const dash = $('#dash');
@@ -103,6 +126,98 @@
   const list = $('#rep-list');
   const count = $('#rep-count');
   const lockBtn = $('#lock-btn');
+
+  const TEXT = {
+    id: {
+      'doc.title': 'Laporan bug · Arus',
+      'header.subtitle': 'Laporan bug',
+      lock: 'Kunci lagi',
+      'gate.title': 'Masuk ke laporan',
+      'gate.body': 'Halaman ini hanya untuk pemilik Arus. Kunci disimpan di tab ini dan hilang saat tab ditutup.',
+      'gate.label': 'Kunci akses',
+      'gate.submit': 'Buka laporan',
+      'gate.note': 'Kunci diatur lewat env REPORTS_KEY di Vercel.',
+      'stats.downloads': 'Unduhan',
+      'stats.stars': 'Bintang',
+      'stats.forks': 'Fork',
+      'search.placeholder': 'Cari isi laporan atau versi',
+      'search.label': 'Cari laporan',
+      reload: 'Muat ulang',
+      'copy.all': 'Salin semua',
+      'count.initial': '0 laporan',
+      'count.range': '{shown} dari {total} laporan',
+      loading: 'Mengambil laporan…',
+      'loading.more': 'Menampilkan 30 laporan terbaru. Masih ada laporan lama.',
+      'key.wrong': 'Kunci akses salah.',
+      'load.failed': 'Gagal memuat ({status})',
+      'copy.done': 'Semua laporan tersalin.',
+      'copy.blocked': 'Clipboard tidak tersedia.',
+      'empty.filter': 'Tidak ada yang cocok dengan pencarian.',
+      'empty.none': 'Belum ada laporan masuk.',
+      empty: '(kosong)',
+      contact: 'Kontak: {value}',
+      diagnostics: 'Diagnostik',
+      logs: 'Log terakhir ({count})',
+      'logs.one': '1 log',
+      'logs.count': '{count} log',
+      'copy.json': 'Salin JSON',
+      copied: 'Tersalin',
+      'date.none': 'tanpa tanggal',
+      'stats.updated': 'Diperbarui {time}',
+      'stats.pending': 'Mengambil statistik…',
+      'stats.failed': 'Statistik belum bisa dimuat. Mencoba lagi sebentar lagi.',
+      locale: 'id-ID'
+    },
+    en: {
+      'doc.title': 'Bug reports · Arus',
+      'header.subtitle': 'Bug reports',
+      lock: 'Lock again',
+      'gate.title': 'Open the reports',
+      'gate.body': 'This page is only for the Arus owner. The key stays in this tab and is cleared when the tab closes.',
+      'gate.label': 'Access key',
+      'gate.submit': 'Open reports',
+      'gate.note': 'The key is set through the REPORTS_KEY env in Vercel.',
+      'stats.downloads': 'Downloads',
+      'stats.stars': 'Stars',
+      'stats.forks': 'Forks',
+      'search.placeholder': 'Search message or version',
+      'search.label': 'Search reports',
+      reload: 'Reload',
+      'copy.all': 'Copy all',
+      'count.initial': '0 reports',
+      'count.range': '{shown} of {total} reports',
+      loading: 'Loading reports…',
+      'loading.more': 'Showing the latest 30 reports. Older reports exist.',
+      'key.wrong': 'Wrong access key.',
+      'load.failed': 'Could not load ({status})',
+      'copy.done': 'All reports copied.',
+      'copy.blocked': 'Clipboard is unavailable.',
+      'empty.filter': 'Nothing matches your search.',
+      'empty.none': 'No reports yet.',
+      empty: '(empty)',
+      contact: 'Contact: {value}',
+      diagnostics: 'Diagnostics',
+      logs: 'Recent logs ({count})',
+      'logs.one': '1 log',
+      'logs.count': '{count} logs',
+      'copy.json': 'Copy JSON',
+      copied: 'Copied',
+      'date.none': 'no date',
+      'stats.updated': 'Updated {time}',
+      'stats.pending': 'Loading stats…',
+      'stats.failed': 'Stats could not load. Retrying shortly.',
+      locale: 'en-US'
+    }
+  };
+
+  function t(key, vars) {
+    let text = TEXT[state.lang] && TEXT[state.lang][key] !== undefined ? TEXT[state.lang][key] : TEXT.id[key];
+    if (text === undefined) return key;
+    if (vars) {
+      Object.keys(vars).forEach((name) => { text = text.split('{' + name + '}').join(String(vars[name])); });
+    }
+    return text;
+  }
 
   function setMsg(el, text, error) {
     el.textContent = text || '';
@@ -127,10 +242,39 @@
   }
 
   function formatDate(iso) {
-    if (!iso) return 'tanpa tanggal';
+    if (!iso) return t('date.none');
     const date = new Date(iso);
     if (Number.isNaN(date.getTime())) return iso;
-    return date.toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' });
+    return date.toLocaleString(t('locale'), { dateStyle: 'medium', timeStyle: 'short' });
+  }
+
+  function formatNumber(value) {
+    return Number(value || 0).toLocaleString(t('locale'));
+  }
+
+  function renderStats() {
+    const data = state.stats;
+    $('#stat-downloads').textContent = data && typeof data.downloads === 'number' ? formatNumber(data.downloads) : '—';
+    $('#stat-stars').textContent = data && typeof data.stars === 'number' ? formatNumber(data.stars) : '—';
+    $('#stat-forks').textContent = data && typeof data.forks === 'number' ? formatNumber(data.forks) : '—';
+    $('#stats-note').textContent = state.statsAt
+      ? t('stats.updated', { time: new Date(state.statsAt).toLocaleTimeString(t('locale'), { hour: '2-digit', minute: '2-digit' }) })
+      : t(state.statsFailed ? 'stats.failed' : 'stats.pending');
+  }
+
+  async function loadStats() {
+    try {
+      const response = await fetch('/api/stats', { headers: { Accept: 'application/json' }, cache: 'no-store' });
+      if (!response.ok) throw new Error('stats');
+      const data = await response.json();
+      if (!data || typeof data.downloads !== 'number') throw new Error('stats');
+      state.stats = data;
+      state.statsAt = Date.now();
+      state.statsFailed = false;
+    } catch {
+      state.statsFailed = true;
+    }
+    renderStats();
   }
 
   function render() {
@@ -141,9 +285,9 @@
       const haystack = `${report.message || ''} ${report.contact || ''} ${report.app?.version || ''} ${report.id || ''}`.toLowerCase();
       return haystack.includes(filter);
     });
-    count.textContent = `${reports.length} dari ${state.reports.length} laporan`;
+    if (state.loaded) count.textContent = t('count.range', { shown: reports.length, total: state.reports.length });
     if (!reports.length) {
-      list.appendChild(el('div', 'empty', state.reports.length ? 'Tidak ada yang cocok dengan pencarian.' : 'Belum ada laporan masuk.'));
+      list.appendChild(el('div', 'empty', state.reports.length ? t('empty.filter') : t('empty.none')));
       return;
     }
     for (const report of reports) {
@@ -163,35 +307,35 @@
       }
       if (Array.isArray(report.logs) && report.logs.length) {
         meta.appendChild(el('i', 'dot'));
-        meta.appendChild(el('span', '', `${report.logs.length} log`));
+        meta.appendChild(el('span', '', report.logs.length === 1 ? t('logs.one') : t('logs.count', { count: report.logs.length })));
       }
       top.appendChild(meta);
       card.appendChild(top);
-      card.appendChild(el('p', 'rep-msg', report.message || '(kosong)'));
-      if (report.contact) card.appendChild(el('p', 'rep-contact', `Kontak: ${report.contact}`));
+      card.appendChild(el('p', 'rep-msg', report.message || t('empty')));
+      if (report.contact) card.appendChild(el('p', 'rep-contact', t('contact', { value: report.contact })));
       if (report.diagnostics) {
         const details = document.createElement('details');
-        details.appendChild(el('summary', '', 'Diagnostik'));
+        details.appendChild(el('summary', '', t('diagnostics')));
         details.appendChild(el('pre', '', JSON.stringify(report.diagnostics, null, 2)));
         card.appendChild(details);
       }
       if (Array.isArray(report.logs) && report.logs.length) {
         const details = document.createElement('details');
-        details.appendChild(el('summary', '', `Log terakhir (${report.logs.length})`));
+        details.appendChild(el('summary', '', t('logs', { count: report.logs.length })));
         const lines = report.logs.map((entry) => `${entry.at || ''} [${entry.level || 'log'}] ${entry.message || ''}`).join('\n');
         details.appendChild(el('pre', '', lines));
         card.appendChild(details);
       }
       const actions = el('div', 'rep-actions');
-      const copy = el('button', '', 'Salin JSON');
+      const copy = el('button', '', t('copy.json'));
       copy.type = 'button';
       copy.addEventListener('click', async () => {
         try {
           await navigator.clipboard.writeText(JSON.stringify(report, null, 2));
-          copy.textContent = 'Tersalin';
-          setTimeout(() => { copy.textContent = 'Salin JSON'; }, 1600);
+          copy.textContent = t('copied');
+          setTimeout(() => { copy.textContent = t('copy.json'); }, 1600);
         } catch {
-          setMsg(repMsg, 'Clipboard tidak tersedia.', true);
+          setMsg(repMsg, t('copy.blocked'), true);
         }
       });
       actions.appendChild(copy);
@@ -204,22 +348,24 @@
   async function load() {
     if (!state.key || state.busy) return;
     state.busy = true;
-    setMsg(repMsg, 'Mengambil laporan…');
+    setMsg(repMsg, t('loading'));
     try {
       const res = await fetch(`/api/reports?limit=100`, {
         headers: { 'x-reports-key': state.key },
         cache: 'no-store'
       });
       const data = await res.json().catch(() => null);
-      if (res.status === 401) throw new Error('Kunci akses salah.');
-      if (!res.ok) throw new Error(data?.error || `Gagal memuat (${res.status})`);
+      if (res.status === 401) throw new Error(t('key.wrong'));
+      if (!res.ok) throw new Error(data?.error || t('load.failed', { status: res.status }));
       state.reports = Array.isArray(data.reports) ? data.reports : [];
-      setMsg(repMsg, data.hasMore ? 'Menampilkan 30 laporan terbaru. Masih ada laporan lama.' : '');
+      state.loaded = true;
+      setMsg(repMsg, data.hasMore ? t('loading.more') : '');
       render();
       dash.hidden = false;
       gate.hidden = true;
       lockBtn.hidden = false;
       writeKey(state.key);
+      loadStats();
     } catch (error) {
       setMsg(state.reports.length ? repMsg : gateMsg, error.message, true);
       if (!state.reports.length) {
@@ -232,6 +378,31 @@
     } finally {
       state.busy = false;
     }
+  }
+
+  function applyLang() {
+    document.documentElement.lang = state.lang;
+    document.title = t('doc.title');
+    document.querySelectorAll('[data-i18n]').forEach((node) => { node.textContent = t(node.dataset.i18n); });
+    const search = $('#rep-search');
+    search.placeholder = t('search.placeholder');
+    search.setAttribute('aria-label', t('search.label'));
+    document.querySelectorAll('[data-lang-value]').forEach((button) => {
+      const active = button.dataset.langValue === state.lang;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-pressed', String(active));
+    });
+    setMsg(repMsg, '');
+    setMsg(gateMsg, '');
+    if (!state.loaded) count.textContent = t('count.initial');
+    render();
+    renderStats();
+  }
+
+  function setLang(value) {
+    state.lang = value === 'en' ? 'en' : 'id';
+    try { localStorage.setItem(LANG_KEY, state.lang); } catch { /* private mode */ }
+    applyLang();
   }
 
   $('#gate-form').addEventListener('submit', (event) => {
@@ -254,30 +425,47 @@
     if (!state.reports.length) return;
     try {
       await navigator.clipboard.writeText(JSON.stringify(state.reports, null, 2));
-      setMsg(repMsg, 'Semua laporan tersalin.');
+      setMsg(repMsg, t('copy.done'));
     } catch {
-      setMsg(repMsg, 'Clipboard tidak tersedia.', true);
+      setMsg(repMsg, t('copy.blocked'), true);
     }
+  });
+
+  document.querySelectorAll('[data-lang-value]').forEach((button) => {
+    button.addEventListener('click', () => setLang(button.dataset.langValue));
   });
 
   lockBtn.addEventListener('click', () => {
     state.key = '';
     state.reports = [];
+    state.loaded = false;
     writeKey('');
     gate.hidden = false;
     dash.hidden = true;
     lockBtn.hidden = true;
     list.textContent = '';
+    count.textContent = t('count.initial');
     $('#gate-key').value = '';
     setMsg(repMsg, '');
     setMsg(gateMsg, '');
     $('#gate-key').focus();
   });
 
+  window.setInterval(() => {
+    if (document.visibilityState === 'visible' && !dash.hidden) loadStats();
+  }, REFRESH_MS);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && !dash.hidden) loadStats();
+  });
+
+  let savedLang = 'id';
+  try { savedLang = localStorage.getItem(LANG_KEY) === 'en' ? 'en' : 'id'; } catch { /* private mode */ }
+  state.lang = savedLang;
+  applyLang();
+
   const saved = readKey();
   if (saved) {
     state.key = saved;
-    dash.hidden = false;
     gate.hidden = true;
     lockBtn.hidden = false;
     load();
