@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Arus Capture",
-  "version": "1.3.9",
+  "version": "1.4.0",
   "description": "Send video, audio, subtitles, HLS, and links to Arus, and take over Chrome downloads like a desktop download manager.",
   "minimum_chrome_version": "116",
   "permissions": [

@@ -1,0 +1,7 @@
+User-agent: *
+Disallow: /admin
+Disallow: /admin.html
+Disallow: /api/
+Allow: /
+
+Sitemap: https://arus.xinet.id/sitemap.xml

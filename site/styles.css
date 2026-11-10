@@ -1422,8 +1422,7 @@ html.dialog-open { overflow: hidden; }
   .dialog-close { top: 12px; right: 12px; }
   .dialog-head { padding-right: 26px; }
   .dialog-body { grid-template-columns: 1fr; }
-  .qr-panel { order: -1; }
-  .qr-frame { width: 220px; margin-inline: auto; }
+  .qr-frame { width: 200px; margin-inline: auto; }
   .presets { grid-template-columns: 1fr 1fr; }
   .dialog-actions { flex-direction: column-reverse; }
   .dialog-actions .btn { width: 100%; }

@@ -19,7 +19,7 @@ Daftar dependensi Rust lengkap, termasuk versi yang dipakai saat rilis, ada di `
 ## Website
 
 - **qrcode-generator** oleh Kazuhiko Arase - MIT - https://github.com/kazuhikoarase/qrcode-generator
-  Salinan ada di `site/vendor/qrcode.js`.
+  Salinan ada di `site/vendor/qrcode.js` dan `public/vendor/qrcode.js` untuk QRIS di aplikasi.
 
 ## Aset
 

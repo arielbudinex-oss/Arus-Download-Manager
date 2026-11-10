@@ -358,6 +358,7 @@ chrome.tabs.onRemoved.addListener((tabId) => {
 
 chrome.runtime.onInstalled.addListener(() => {
   ensurePagehook();
+  findServer().catch(() => {});
   if (!chrome.contextMenus) return;
   chrome.contextMenus.removeAll(() => {
     chrome.contextMenus.create({
@@ -367,6 +368,12 @@ chrome.runtime.onInstalled.addListener(() => {
     });
   });
 });
+
+if (chrome.runtime.onStartup) {
+  chrome.runtime.onStartup.addListener(() => {
+    findServer().catch(() => {});
+  });
+}
 
 async function probe(base, timeoutMs = 2200) {
   const controller = new AbortController();

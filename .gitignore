@@ -11,3 +11,5 @@ rust-native/gen/
 *.bak-*
 .DS_Store
 .scratch/
+
+.vercel

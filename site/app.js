@@ -174,7 +174,7 @@
 
   function showStatsFallback() {
     $$('[data-download-count]').forEach(function (el) {
-      if (el.textContent.indexOf('…') !== -1) el.textContent = 'Rilis 1.0.0';
+      if (el.textContent.indexOf('…') !== -1) el.textContent = 'Rilis 1.0.1';
     });
     $$('[data-stars], [data-forks]').forEach(function (el) {
       if (el.textContent === '…') el.textContent = '-';

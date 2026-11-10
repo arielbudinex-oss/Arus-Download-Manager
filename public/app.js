@@ -5,6 +5,52 @@
   const svgNS = 'http://www.w3.org/2000/svg';
   const MEDIA_URL_RE = /\.(mp4|webm|mkv|mov|m4v|avi|ts|flv|wmv|mpg|mpeg|mp3|m4a|aac|flac|ogg|wav|opus|wma|m3u8|mpd)(?:[?#]|$)/i;
   const FILE_URL_RE = /\.(zip|rar|7z|tar|gz|bz2|xz|iso|cab|exe|msi|dmg|pkg|deb|rpm|apk|appx|msix|pdf|docx?|xlsx?|pptx?|epub|csv|txt|rtf|torrent)(?:[?#]|$)/i;
+  const REPO_URL = 'https://github.com/arielbudinex-oss/Arus-Download-Manager';
+  const DISCORD_URL = 'https://discord.gg/K84ebNFJV';
+  const SETUP_KEY = 'arus.setup.v1';
+  const SUPPORT_KEY = 'arus.support.v1';
+  const UPDATE_NOTICE_KEY = 'arus.updateNotice.v1';
+  const SITE_URL = 'https://arus.xinet.id';
+  const REPORT_ENDPOINT = `${SITE_URL}/api/report`;
+  const REPORT_LOG_LIMIT = 60;
+  const REPORT_LOGS = [];
+
+  function redactReportText(value) {
+    let text = String(value ?? '');
+    text = text.replace(/\bhttps?:\/\/[^\s"'<>]+/gi, '<link>');
+    text = text.replace(/\b[A-Za-z]:\\[^"'\r\n<>|]+/g, '<path>');
+    text = text.replace(/\/(?:Users|home)\/[^"'\r\n<>|]+/g, '<path>');
+    text = text.replace(/([?&][^=&\s]+)=[^&\s"'#]+/g, '$1=<redacted>');
+    text = text.replace(/\s+/g, ' ').trim();
+    return text.slice(0, 400);
+  }
+
+  function pushReportLog(level, message) {
+    try {
+      const text = redactReportText(message);
+      if (!text) return;
+      REPORT_LOGS.push({ level, at: new Date().toISOString(), message: text });
+      if (REPORT_LOGS.length > REPORT_LOG_LIMIT) {
+        REPORT_LOGS.splice(0, REPORT_LOGS.length - REPORT_LOG_LIMIT);
+      }
+    } catch {
+      /* logging must never break the UI */
+    }
+  }
+
+  const nativeConsoleError = console.error.bind(console);
+  console.error = (...args) => {
+    pushReportLog('error', args.map((item) => (item instanceof Error ? item.message : String(item))).join(' '));
+    nativeConsoleError(...args);
+  };
+  window.addEventListener('error', (event) => {
+    const file = String(event.filename || '').split('/').pop();
+    pushReportLog('error', `${event.message || 'Script error'}${file ? ` (${file}:${event.lineno || 0})` : ''}`);
+  });
+  window.addEventListener('unhandledrejection', (event) => {
+    const reason = event.reason;
+    pushReportLog('error', `Unhandled rejection: ${reason?.message || reason || 'unknown'}`);
+  });
 
   const LIBRARY = [
     { id: 'all', label: 'All downloads', icon: 'i-globe' },
@@ -92,7 +138,17 @@
     slotSig: '',
     lastSynced: '',
     lastClipboard: '',
-    source: null
+    source: null,
+    setupPoll: 0,
+    supportAmount: 25000,
+    update: {
+      status: 'idle',
+      latest: '',
+      available: false,
+      url: '',
+      error: '',
+      checkedAt: 0
+    }
   };
 
   const LIST_GROUPS = [
@@ -119,6 +175,7 @@
     liveDot: $('#live-dot'),
     liveSpeed: $('.live-speed'),
     settingsBtn: $('#settings-btn'),
+    supportBtn: $('#support-btn'),
     aboutBtn: $('#about-btn'),
     privacyBtn: $('#privacy-btn'),
     search: $('#search'),
@@ -252,6 +309,7 @@
     trayRow: $('#tray-row'),
     setLaunch: $('#set-launch'),
     launchRow: $('#launch-row'),
+    setUpdates: $('#set-updates'),
     setMotion: $('#set-motion'),
     themePicker: $('#theme-picker'),
     densityPicker: $('#density-picker'),
@@ -262,6 +320,30 @@
     extStatusCopy: $('#ext-status-copy'),
     extPath: $('#ext-path'),
     openExtension: $('#open-extension'),
+    extOpenBrowser: $('#ext-open-browser'),
+    setupDialog: $('#setup-dialog'),
+    setupExtPath: $('#setup-ext-path'),
+    setupOpenBrowser: $('#setup-open-browser'),
+    setupCopyPath: $('#setup-copy-path'),
+    setupCheck: $('#setup-check'),
+    setupSkip: $('#setup-skip'),
+    setupDone: $('#setup-done'),
+    setupStatus: $('#setup-status'),
+    setupStatusCopy: $('#setup-status-copy'),
+    supportDialog: $('#support-dialog'),
+    supportAmount: $('#support-amount'),
+    supportAmountHint: $('#support-amount-hint'),
+    supportPresets: $('#support-presets'),
+    supportQr: $('#support-qr'),
+    supportQrAmount: $('#support-qr-amount'),
+    updateCard: $('#update-card'),
+    updateTitle: $('#update-title'),
+    updateNote: $('#update-note'),
+    updateCheck: $('#update-check'),
+    updateDownload: $('#update-download'),
+    aboutSupport: $('#about-support'),
+    aboutGithub: $('#about-github'),
+    aboutDiscord: $('#about-discord'),
     aboutVersion: $('#about-version'),
     aboutVersionRow: $('#about-version-row'),
     aboutEngine: $('#about-engine'),
@@ -271,7 +353,16 @@
     aboutExtension: $('#about-extension'),
     aboutOpenData: $('#about-open-data'),
     aboutOpenExt: $('#about-open-ext'),
+    aboutReport: $('#about-report'),
     aboutCopy: $('#about-copy'),
+    reportDialog: $('#report-dialog'),
+    reportMessage: $('#report-message'),
+    reportContact: $('#report-contact'),
+    reportSummary: $('#report-summary'),
+    reportStatus: $('#report-status'),
+    reportSend: $('#report-send'),
+    reportCopy: $('#report-copy'),
+    reportGithub: $('#report-github'),
     settingsSave: $('#settings-save'),
     settingsHint: $('#settings-hint'),
     confirmDialog: $('#confirm-dialog'),
@@ -718,14 +809,23 @@
       options.headers = { 'Content-Type': 'application/json' };
       options.body = JSON.stringify(body);
     }
-    const res = await fetch(path, options);
+    let res;
+    try {
+      res = await fetch(path, options);
+    } catch (err) {
+      pushReportLog('error', `Network error on ${method} ${path}: ${err.message}`);
+      throw err;
+    }
     let data = null;
     try {
       data = await res.json();
     } catch {
       data = null;
     }
-    if (!res.ok) throw new Error(data?.error || `Request failed (${res.status})`);
+    if (!res.ok) {
+      pushReportLog('error', `${method} ${path} failed with ${res.status}${data?.error ? `: ${data.error}` : ''}`);
+      throw new Error(data?.error || `Request failed (${res.status})`);
+    }
     return data;
   }
 
@@ -784,7 +884,7 @@
       appearance: 'Changes preview instantly and save with the dialog.',
       capture: 'After updating the extension, click Reload in chrome://extensions.',
       about: 'Arus runs entirely on this PC.',
-      privacy: 'No telemetry, no accounts, no cloud sync.'
+      privacy: 'No automatic telemetry, no accounts, no cloud sync.'
     };
     return hints[tab] || 'Changes apply immediately after saving.';
   }
@@ -792,18 +892,48 @@
   function updateExtensionStatus() {
     if (!els.extStatus) return;
     const exists = Boolean(state.meta?.extensionExists);
+    const connected = Boolean(state.meta?.extensionConnected);
     els.extStatus.classList.toggle('is-off', !exists);
-    els.extStatusCopy.textContent = exists ? 'Extension folder ready' : 'Extension folder missing';
+    els.extStatus.classList.toggle('is-on', connected);
+    els.extStatusCopy.textContent = !exists
+      ? 'Extension folder missing'
+      : connected
+        ? 'Extension connected'
+        : 'Extension folder ready';
     els.openExtension.disabled = !exists;
+    if (els.extOpenBrowser) els.extOpenBrowser.disabled = !exists;
     if (state.meta) {
       els.extPath.textContent = state.meta.extensionPath || 'extension folder';
       els.extPath.title = state.meta.extensionPath || '';
+    }
+    updateSetupStatus();
+  }
+
+  function updateSetupStatus() {
+    if (!els.setupStatus) return;
+    const exists = Boolean(state.meta?.extensionExists);
+    const connected = Boolean(state.meta?.extensionConnected);
+    els.setupStatus.classList.toggle('is-off', !connected);
+    els.setupStatus.classList.toggle('is-on', connected);
+    if (els.setupStatusCopy) {
+      els.setupStatusCopy.textContent = !exists
+        ? 'Extension folder missing'
+        : connected
+          ? 'Extension connected'
+          : 'Waiting for the extension';
+    }
+    if (els.setupExtPath) {
+      els.setupExtPath.textContent = state.meta?.extensionPath || 'extension folder';
+      els.setupExtPath.title = state.meta?.extensionPath || '';
+    }
+    for (const button of [els.setupOpenBrowser, els.setupCopyPath, els.setupCheck]) {
+      if (button) button.disabled = !exists;
     }
   }
 
   function populateAbout() {
     const meta = state.meta;
-    const version = meta?.version || '1.0.0';
+    const version = meta?.version || '1.0.1';
     if (els.aboutVersion) els.aboutVersion.textContent = `v${version}`;
     if (els.aboutVersionRow) els.aboutVersionRow.textContent = version;
     if (els.aboutEngine) els.aboutEngine.textContent = meta?.engine ? `${meta.engine} · axum` : 'Rust · axum';
@@ -823,7 +953,275 @@
       els.aboutExtension.title = meta?.extensionPath || '';
     }
     if (els.aboutOpenExt) els.aboutOpenExt.disabled = !meta?.extensionExists;
+    renderUpdateCard();
     updateExtensionStatus();
+  }
+
+  function readStore(key) {
+    try {
+      return localStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  }
+
+  function writeStore(key, value) {
+    try {
+      localStorage.setItem(key, value);
+    } catch {
+      /* storage can be unavailable in locked-down webviews */
+    }
+  }
+
+  async function refreshMetaQuiet() {
+    try {
+      state.meta = await api('/api/meta');
+      updateMetaHint();
+      updateExtensionStatus();
+      return state.meta;
+    } catch {
+      return null;
+    }
+  }
+
+  function startSetupPolling() {
+    stopSetupPolling();
+    state.setupPoll = window.setInterval(() => {
+      if (els.setupDialog?.open) refreshMetaQuiet();
+    }, 2500);
+  }
+
+  function stopSetupPolling() {
+    if (state.setupPoll) {
+      window.clearInterval(state.setupPoll);
+      state.setupPoll = 0;
+    }
+  }
+
+  function openSetupDialog() {
+    if (!els.setupDialog || !state.meta?.extensionExists) return;
+    updateExtensionStatus();
+    if (!els.setupDialog.open) els.setupDialog.showModal();
+    startSetupPolling();
+  }
+
+  function finishSetup(offerSupport) {
+    writeStore(SETUP_KEY, 'done');
+    stopSetupPolling();
+    if (els.setupDialog?.open) els.setupDialog.close();
+    if (offerSupport && readStore(SUPPORT_KEY) !== 'seen') {
+      window.setTimeout(() => openSupportDialog(), 420);
+    }
+  }
+
+  async function openExtensionBrowser() {
+    try {
+      const result = await api('/api/open-extension-browser', { method: 'POST' });
+      toast({
+        icon: 'i-check',
+        title: `Extensions page opened${result?.browser ? ` in ${result.browser}` : ''}`,
+        body: 'Turn on Developer mode, then choose Load unpacked.',
+        timeout: 7000
+      });
+    } catch (err) {
+      toast({ icon: 'i-alert', title: 'Could not open a browser', body: err.message, timeout: 6000 });
+    }
+  }
+
+  async function copyExtensionPath() {
+    const path = state.meta?.extensionPath;
+    if (!path) return;
+    try {
+      await navigator.clipboard.writeText(path);
+      toast({ icon: 'i-copy', title: 'Extension path copied', timeout: 2400 });
+    } catch {
+      toast({ icon: 'i-alert', title: 'Could not copy the path' });
+    }
+  }
+
+  function formatRupiah(value) {
+    return new Intl.NumberFormat('id-ID').format(Math.round(Number(value) || 0));
+  }
+
+  function markSupportPresets(amount) {
+    if (!els.supportPresets) return;
+    for (const button of els.supportPresets.querySelectorAll('[data-amount]')) {
+      button.classList.toggle('is-active', Number(button.dataset.amount) === amount);
+    }
+  }
+
+  function renderSupportQr(amount) {
+    if (!els.supportQr) return;
+    if (!window.ArusQris) {
+      els.supportQr.textContent = 'QRIS is not available';
+      return;
+    }
+    try {
+      window.ArusQris.render(els.supportQr, amount);
+      if (els.supportQrAmount) els.supportQrAmount.textContent = `Rp ${formatRupiah(amount)}`;
+    } catch {
+      els.supportQr.textContent = 'QRIS is not available';
+    }
+  }
+
+  function setSupportAmount(value, options = {}) {
+    const amount = Math.round(Number(value) || 0);
+    if (options.write !== false && els.supportAmount) {
+      els.supportAmount.value = amount > 0 ? formatRupiah(amount) : '';
+    }
+    markSupportPresets(amount);
+    if (!els.supportAmountHint) return;
+    if (!window.ArusQris) {
+      els.supportAmountHint.textContent = 'QRIS is not available in this build.';
+      els.supportAmountHint.classList.add('is-error');
+      return;
+    }
+    if (amount < window.ArusQris.min) {
+      els.supportAmountHint.textContent = 'Minimum is Rp 1.000.';
+      els.supportAmountHint.classList.add('is-error');
+      return;
+    }
+    if (amount > window.ArusQris.max) {
+      els.supportAmountHint.textContent = 'Maximum is Rp 50.000.000.';
+      els.supportAmountHint.classList.add('is-error');
+      return;
+    }
+    els.supportAmountHint.textContent = 'Any amount from Rp 1.000. The QR updates as you type.';
+    els.supportAmountHint.classList.remove('is-error');
+    state.supportAmount = amount;
+    renderSupportQr(amount);
+  }
+
+  function openSupportDialog() {
+    if (!els.supportDialog) return;
+    writeStore(SUPPORT_KEY, 'seen');
+    setSupportAmount(state.supportAmount || 25000);
+    if (!els.supportDialog.open) els.supportDialog.showModal();
+  }
+
+  async function openExternal(url) {
+    if (!url) return;
+    try {
+      await api('/api/open-url', { method: 'POST', body: { url } });
+    } catch (err) {
+      toast({ icon: 'i-alert', title: 'Could not open the link', body: err.message, timeout: 6000 });
+    }
+  }
+
+  function formatCheckedAt(timestamp) {
+    if (!timestamp) return '';
+    try {
+      return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch {
+      return '';
+    }
+  }
+
+  function renderUpdateCard() {
+    if (!els.updateTitle || !els.updateNote) return;
+    const info = state.update;
+    const current = state.meta?.version || '1.0.1';
+    if (els.updateDownload) els.updateDownload.hidden = true;
+    if (els.updateCheck) {
+      els.updateCheck.hidden = false;
+      els.updateCheck.disabled = info.status === 'loading';
+      els.updateCheck.textContent = info.status === 'error' ? 'Try again' : info.status === 'done' ? 'Check again' : 'Check now';
+    }
+    if (info.status === 'loading') {
+      els.updateTitle.textContent = 'Checking for updates';
+      els.updateNote.textContent = 'Asking GitHub for the latest release.';
+      return;
+    }
+    if (info.status === 'error' || (info.status === 'done' && info.error)) {
+      els.updateTitle.textContent = 'Could not check for updates';
+      els.updateNote.textContent = info.error || 'The release feed is unreachable right now.';
+      return;
+    }
+    if (info.status === 'done' && info.available) {
+      els.updateTitle.textContent = `Arus ${info.latest} is available`;
+      els.updateNote.textContent = `You are on ${current}. Download the new installer from GitHub.`;
+      if (els.updateDownload) els.updateDownload.hidden = false;
+      if (els.updateCheck) els.updateCheck.hidden = true;
+      return;
+    }
+    if (info.status === 'done') {
+      els.updateTitle.textContent = 'Arus is up to date';
+      const time = formatCheckedAt(info.checkedAt);
+      els.updateNote.textContent = `Version ${current} is the latest.${time ? ` Checked at ${time}.` : ''}`;
+      return;
+    }
+    els.updateTitle.textContent = 'Not checked yet';
+    els.updateNote.textContent = 'Arus can ask GitHub for newer releases after launch.';
+  }
+
+  async function checkForUpdates(options = {}) {
+    if (state.update.status === 'loading') return;
+    state.update = { ...state.update, status: 'loading' };
+    renderUpdateCard();
+    try {
+      const result = await api('/api/update-check');
+      state.update = {
+        status: 'done',
+        latest: result.latest || '',
+        available: Boolean(result.available),
+        url: result.url || `${REPO_URL}/releases/latest`,
+        error: result.error || '',
+        checkedAt: result.checkedAt || Date.now()
+      };
+      renderUpdateCard();
+      if (result.error) {
+        if (!options.silent) {
+          toast({ icon: 'i-alert', title: 'Could not check for updates', body: result.error, timeout: 6000 });
+        }
+      } else if (result.available) {
+        if (readStore(UPDATE_NOTICE_KEY) !== result.latest) {
+          writeStore(UPDATE_NOTICE_KEY, result.latest || '');
+          toast({
+            icon: 'i-download',
+            title: `Arus ${result.latest} is available`,
+            body: `You are on ${result.current || state.meta?.version || ''}. Open the release page to install it.`,
+            timeout: 14000,
+            actions: [{ label: 'Download update', primary: true, onClick: () => openExternal(state.update.url) }]
+          });
+        }
+      } else if (!options.silent) {
+        toast({
+          icon: 'i-check',
+          title: 'Arus is up to date',
+          body: `Version ${result.current || state.meta?.version || ''} is the latest.`,
+          timeout: 3200
+        });
+      }
+    } catch (err) {
+      state.update = { ...state.update, status: 'error', error: err.message };
+      renderUpdateCard();
+      if (!options.silent) {
+        toast({ icon: 'i-alert', title: 'Could not check for updates', body: err.message, timeout: 6000 });
+      }
+    } finally {
+      if (els.updateCheck) els.updateCheck.disabled = false;
+    }
+  }
+
+  function scheduleUpdateCheck() {
+    if (state.data?.settings?.checkUpdates === false) return;
+    window.setTimeout(() => {
+      if (state.data?.settings?.checkUpdates === false) return;
+      if (state.update.status === 'idle') checkForUpdates({ silent: true });
+    }, 3200);
+  }
+
+  function maybeFirstRun() {
+    if (!window.arus?.isDesktop) return;
+    if (readStore(SETUP_KEY) === 'done') return;
+    if (!state.meta?.extensionExists) return;
+    if (state.meta.extensionConnected) {
+      writeStore(SETUP_KEY, 'done');
+      return;
+    }
+    window.setTimeout(() => {
+      if (readStore(SETUP_KEY) !== 'done') openSetupDialog();
+    }, 700);
   }
 
   function selectSettingsTab(tab) {
@@ -846,7 +1244,10 @@
     els.settingsCancel.textContent = editable ? 'Cancel' : 'Close';
     if (els.settingsHint) els.settingsHint.textContent = settingsHintFor(next);
     if (next === 'about') populateAbout();
-    if (next === 'capture') updateExtensionStatus();
+    if (next === 'capture') {
+      updateExtensionStatus();
+      refreshMetaQuiet();
+    }
   }
 
   async function copyDiagnostics() {
@@ -866,6 +1267,171 @@
     } catch {
       toast({ icon: 'i-alert', title: 'Could not copy diagnostics' });
     }
+  }
+
+  function collectReportDiagnostics() {
+    const meta = state.meta || {};
+    const prefs = settings();
+    const all = downloads();
+    const count = (status) => all.filter((dl) => dl.status === status).length;
+    return {
+      app: {
+        version: meta.version || '',
+        engine: meta.engine || 'Rust',
+        shell: 'Tauri',
+        channel: 'stable'
+      },
+      system: {
+        os: meta.os || '',
+        arch: meta.arch || '',
+        ffmpeg: Boolean(meta.ffmpeg),
+        webview: typeof navigator !== 'undefined' ? navigator.userAgent : ''
+      },
+      settings: {
+        theme: prefs.theme || 'dark',
+        compactMode: Boolean(prefs.compactMode),
+        reduceMotion: Boolean(prefs.reduceMotion),
+        maxConcurrent: prefs.maxConcurrent,
+        connections: prefs.connections,
+        speedLimit: prefs.speedLimit,
+        autoRetry: prefs.autoRetry,
+        organizeByCategory: Boolean(prefs.organizeByCategory),
+        clipboardWatch: Boolean(prefs.clipboardWatch),
+        notifications: Boolean(prefs.notifications),
+        minimizeToTray: Boolean(prefs.minimizeToTray),
+        launchAtLogin: Boolean(prefs.launchAtLogin),
+        checkUpdates: prefs.checkUpdates !== false
+      },
+      extension: {
+        exists: Boolean(meta.extensionExists),
+        connected: Boolean(meta.extensionConnected)
+      },
+      library: {
+        total: all.length,
+        downloading: count('downloading'),
+        queued: count('queued'),
+        paused: count('paused'),
+        failed: count('failed'),
+        completed: count('completed')
+      },
+      recentFailures: all
+        .filter((dl) => dl.status === 'failed')
+        .slice(-5)
+        .map((dl) => ({
+          kind: dl.kind || 'file',
+          category: dl.category || 'other',
+          attempts: dl.attempts || 0,
+          error: redactReportText(dl.error || 'No error message').slice(0, 300)
+        }))
+    };
+  }
+
+  function buildReportText(message, contact) {
+    const diagnostics = collectReportDiagnostics();
+    const lines = [
+      `Arus bug report`,
+      `Message: ${message || '(empty)'}`,
+      contact ? `Contact: ${contact}` : '',
+      '',
+      'Diagnostics:',
+      JSON.stringify(diagnostics, null, 2),
+      '',
+      `Recent logs (${REPORT_LOGS.length}):`,
+      ...REPORT_LOGS.map((entry) => `${entry.at} [${entry.level}] ${entry.message}`),
+      '',
+      `Issues: ${REPO_URL}/issues`
+    ];
+    return lines.filter((line) => line !== '').join('\n');
+  }
+
+  function updateReportSummary() {
+    if (!els.reportSummary) return;
+    const meta = state.meta || {};
+    const platform = [meta.os, meta.arch].filter(Boolean).join(' ') || 'Windows';
+    const version = meta.version ? `Arus ${meta.version}` : 'Arus';
+    const logs = REPORT_LOGS.length;
+    els.reportSummary.textContent = `${version}, ${platform}, ${logs} recent log${logs === 1 ? '' : 's'}. Links, folder paths, and URL tokens are removed.`;
+  }
+
+  function openReportDialog() {
+    if (!els.reportDialog) return;
+    els.reportSend.disabled = false;
+    els.reportSend.textContent = 'Send report';
+    els.reportStatus.textContent = '';
+    updateReportSummary();
+    if (!els.reportDialog.open) els.reportDialog.showModal();
+    els.reportMessage.focus();
+  }
+
+  async function sendReport() {
+    const message = els.reportMessage.value.trim();
+    const contact = els.reportContact.value.trim();
+    if (message.length < 10) {
+      els.reportStatus.textContent = 'Add a little more detail first.';
+      els.reportMessage.focus();
+      return;
+    }
+    els.reportSend.disabled = true;
+    els.reportSend.textContent = 'Sending…';
+    els.reportStatus.textContent = 'Sending report to arus.xinet.id.';
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), 15000);
+    try {
+      const res = await fetch(REPORT_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
+        body: JSON.stringify({
+          message,
+          contact,
+          app: {
+            version: state.meta?.version || '',
+            build: 'tauri-nsis',
+            channel: 'stable'
+          },
+          diagnostics: collectReportDiagnostics(),
+          logs: REPORT_LOGS.slice(-REPORT_LOG_LIMIT)
+        })
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(data?.error || `Server returned ${res.status}`);
+      els.reportStatus.textContent = 'Report sent. Thank you.';
+      els.reportSend.textContent = 'Sent';
+      els.reportMessage.value = '';
+      els.reportContact.value = '';
+      toast({ icon: 'i-check', title: 'Report sent', body: 'Thanks, the maintainer can see it now.', timeout: 4200 });
+    } catch (err) {
+      const reason = err.name === 'AbortError' ? 'The request timed out.' : err.message;
+      els.reportStatus.textContent = `Could not send: ${reason}`;
+      els.reportSend.disabled = false;
+      els.reportSend.textContent = 'Send report';
+      pushReportLog('error', `Report send failed: ${reason}`);
+    } finally {
+      window.clearTimeout(timer);
+    }
+  }
+
+  async function copyReportText() {
+    const message = els.reportMessage.value.trim();
+    try {
+      await navigator.clipboard.writeText(buildReportText(message, els.reportContact.value.trim()));
+      els.reportStatus.textContent = 'Report copied.';
+      toast({ icon: 'i-copy', title: 'Report copied', timeout: 2400 });
+    } catch {
+      els.reportStatus.textContent = 'Could not copy the report.';
+    }
+  }
+
+  async function openGithubIssue() {
+    const message = els.reportMessage.value.trim();
+    try {
+      await navigator.clipboard.writeText(buildReportText(message, els.reportContact.value.trim()));
+      els.reportStatus.textContent = 'Report copied. Paste it into the issue.';
+    } catch {
+      els.reportStatus.textContent = 'Clipboard unavailable. Copy the details manually.';
+    }
+    const title = message ? `Bug: ${message.slice(0, 70)}` : 'Bug report';
+    openExternal(`${REPO_URL}/issues/new?title=${encodeURIComponent(title)}`);
   }
 
   function applyState(data) {
@@ -2430,6 +2996,7 @@
     els.setNotifications.checked = Boolean(current.notifications);
     els.setTray.checked = Boolean(current.minimizeToTray);
     els.setLaunch.checked = current.launchAtLogin !== false;
+    els.setUpdates.checked = current.checkUpdates !== false;
     els.trayRow.hidden = !window.arus?.isDesktop;
     els.launchRow.hidden = !window.arus?.isDesktop;
     applyTheme(current.theme || 'dark');
@@ -2453,6 +3020,7 @@
       notifications: els.setNotifications.checked,
       minimizeToTray: els.setTray.checked,
       launchAtLogin: els.setLaunch.checked,
+      checkUpdates: els.setUpdates.checked,
       theme: state.previewTheme || settings().theme || 'dark',
       compactMode: Boolean(state.previewAppearance?.compactMode),
       reduceMotion: Boolean(state.previewAppearance?.reduceMotion)
@@ -2530,6 +3098,56 @@
     els.settingsBtn.addEventListener('click', () => openSettingsDialog('downloads'));
     els.aboutBtn.addEventListener('click', () => openSettingsDialog('about'));
     els.privacyBtn.addEventListener('click', () => openSettingsDialog('privacy'));
+    els.supportBtn.addEventListener('click', openSupportDialog);
+    els.aboutSupport.addEventListener('click', openSupportDialog);
+    els.aboutGithub.addEventListener('click', () => openExternal(REPO_URL));
+    els.aboutDiscord.addEventListener('click', () => openExternal(DISCORD_URL));
+    els.updateCheck.addEventListener('click', () => checkForUpdates());
+    els.updateDownload.addEventListener('click', () => openExternal(state.update.url));
+    els.extOpenBrowser.addEventListener('click', openExtensionBrowser);
+    els.setupOpenBrowser.addEventListener('click', openExtensionBrowser);
+    els.setupCopyPath.addEventListener('click', copyExtensionPath);
+    els.setupCheck.addEventListener('click', async () => {
+      const meta = await refreshMetaQuiet();
+      if (meta?.extensionConnected) {
+        toast({ icon: 'i-check', title: 'Extension connected', body: 'Browser capture is ready.', timeout: 3000 });
+      } else {
+        toast({
+          icon: 'i-info',
+          title: 'Not connected yet',
+          body: 'Load the folder in the extensions page, then check again.',
+          timeout: 5000
+        });
+      }
+    });
+    els.setupSkip.addEventListener('click', () => finishSetup(false));
+    els.setupDone.addEventListener('click', () => finishSetup(true));
+    els.setupDialog.addEventListener('close', () => {
+      stopSetupPolling();
+      writeStore(SETUP_KEY, 'done');
+    });
+    if (els.supportPresets) {
+      els.supportPresets.addEventListener('click', (event) => {
+        const button = event.target.closest('[data-amount]');
+        if (button) setSupportAmount(Number(button.dataset.amount));
+      });
+    }
+    if (els.supportAmount) {
+      els.supportAmount.addEventListener('input', () => {
+        const digits = Number(els.supportAmount.value.replace(/\D+/g, '')) || 0;
+        if (digits > 0) {
+          setSupportAmount(digits, { write: false });
+          els.supportAmount.value = formatRupiah(digits);
+        } else {
+          els.supportAmount.value = '';
+          els.supportAmountHint.textContent = 'Minimum is Rp 1.000.';
+          els.supportAmountHint.classList.add('is-error');
+          markSupportPresets(0);
+        }
+      });
+      els.supportAmount.addEventListener('focus', () => els.supportAmount.select());
+      els.supportAmount.addEventListener('blur', () => setSupportAmount(state.supportAmount));
+    }
     els.detailClose.addEventListener('click', closeInspector);
     els.detailToggle.addEventListener('click', () => {
       const dl = state.selectedId ? findDownload(state.selectedId) : null;
@@ -2678,6 +3296,13 @@
       );
     });
     els.aboutCopy.addEventListener('click', copyDiagnostics);
+    els.aboutReport.addEventListener('click', openReportDialog);
+    els.reportSend.addEventListener('click', sendReport);
+    els.reportCopy.addEventListener('click', copyReportText);
+    els.reportGithub.addEventListener('click', openGithubIssue);
+    els.reportDialog.addEventListener('close', () => {
+      els.reportStatus.textContent = '';
+    });
     els.openExtension.addEventListener('click', () => {
       api('/api/open-extension-folder', { method: 'POST' }).catch((err) =>
         toast({ icon: 'i-alert', title: 'Could not open the extension folder', body: err.message })
@@ -2848,6 +3473,9 @@
     }
 
     await Promise.all([loadInitialState(), loadMeta()]);
+    renderUpdateCard();
+    scheduleUpdateCheck();
+    maybeFirstRun();
     connectEvents();
     if (autoScan) {
       requestAnimationFrame(() => {

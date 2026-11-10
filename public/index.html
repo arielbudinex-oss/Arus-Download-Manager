@@ -58,6 +58,8 @@
       <symbol id="i-keyboard" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M11 10h.01M15 10h.01M8 14h8"/></symbol>
       <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 3 5.5 13.5H11L10 21l7.5-10.5H12z"/></symbol>
       <symbol id="i-database" viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7.5" ry="2.8"/><path d="M4.5 6v6c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8V6M4.5 12v6c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8v-6"/></symbol>
+      <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20.2S4.5 15.7 4.5 10.6A4.1 4.1 0 0 1 12 7.9a4.1 4.1 0 0 1 7.5 2.7c0 5.1-7.5 9.6-7.5 9.6z"/></symbol>
+      <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8.5" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="16.5" cy="9.5" r="2.4"/><path d="M15.5 14.6a4.4 4.4 0 0 1 5 4.4"/></symbol>
     </svg>
 
     <div class="titlebar">
@@ -104,6 +106,9 @@
             <span class="live-value" id="global-speed">0 B/s</span>
           </div>
           <div class="sidebar-tools">
+            <button class="icon-btn" id="support-btn" title="Support Arus" aria-label="Support Arus">
+              <svg class="icon"><use href="#i-heart"/></svg>
+            </button>
             <button class="icon-btn" id="about-btn" title="About Arus" aria-label="About Arus">
               <svg class="icon"><use href="#i-info"/></svg>
             </button>
@@ -714,6 +719,14 @@
                   <i class="switch"></i>
                 </label>
               </div>
+              <div class="settings-group">
+                <h4>Updates</h4>
+                <label class="toggle-row">
+                  <span><strong>Check for updates</strong><small>Ask GitHub for the newest release after launch. No identifiers are sent.</small></span>
+                  <input type="checkbox" id="set-updates">
+                  <i class="switch"></i>
+                </label>
+              </div>
             </section>
 
             <section class="settings-panel" data-settings-panel="appearance" role="tabpanel" hidden>
@@ -759,14 +772,18 @@
               </div>
               <div class="status-row">
                 <span class="status-pill" id="ext-status"><i></i><span id="ext-status-copy">Checking extension</span></span>
-                <span class="status-note">Load the bundled folder once; Chrome remembers it.</span>
+                <span class="status-note">Load the bundled folder once. Arus shows Connected after the extension checks in.</span>
               </div>
               <div class="path-box">
                 <span class="mono" id="ext-path">extension folder</span>
                 <button type="button" class="ghost" id="open-extension">Open folder</button>
               </div>
+              <div class="capture-actions">
+                <button type="button" class="primary" id="ext-open-browser"><svg class="icon"><use href="#i-globe"/></svg>Open extensions page</button>
+                <span class="status-note">Opens your default browser. Nothing is installed without your click.</span>
+              </div>
               <ol class="steps">
-                <li>Open <strong>chrome://extensions</strong> and enable Developer mode.</li>
+                <li>Use <strong>Open extensions page</strong> above and turn on Developer mode.</li>
                 <li>Choose <strong>Load unpacked</strong> and select the folder above.</li>
                 <li>Use <strong>Download with Arus</strong> on any video or audio.</li>
               </ol>
@@ -786,7 +803,7 @@
               <div class="about-hero">
                 <img class="about-mark" src="/assets/icon-128.png" alt="">
                 <div>
-                  <h3>Arus <span class="about-version" id="about-version">v1.0.0</span></h3>
+                  <h3>Arus <span class="about-version" id="about-version">v1.0.1</span></h3>
                   <p>A quiet download manager for Windows.</p>
                 </div>
               </div>
@@ -799,18 +816,33 @@
                 <div class="wide"><span>Data folder</span><strong class="mono" id="about-data">n/a</strong></div>
                 <div class="wide"><span>Extension folder</span><strong class="mono" id="about-extension">n/a</strong></div>
               </div>
+              <div class="update-card" id="update-card">
+                <div class="update-copy">
+                  <span class="eyebrow">Updates</span>
+                  <strong id="update-title">Not checked yet</strong>
+                  <small id="update-note">Ask GitHub for the newest release after launch.</small>
+                </div>
+                <div class="update-actions">
+                  <button type="button" class="ghost" id="update-check">Check now</button>
+                  <button type="button" class="primary" id="update-download" hidden>Download update</button>
+                </div>
+              </div>
               <div class="about-actions">
+                <button type="button" class="ghost" id="about-support"><svg class="icon"><use href="#i-heart"/></svg>Support Arus</button>
+                <button type="button" class="ghost" id="about-github"><svg class="icon"><use href="#i-globe"/></svg>GitHub</button>
+                <button type="button" class="ghost" id="about-discord"><svg class="icon"><use href="#i-users"/></svg>Discord</button>
                 <button type="button" class="ghost" id="about-open-data"><svg class="icon"><use href="#i-folder"/></svg>Open data folder</button>
                 <button type="button" class="ghost" id="about-open-ext"><svg class="icon"><use href="#i-download"/></svg>Open extension</button>
+                <button type="button" class="ghost" id="about-report"><svg class="icon"><use href="#i-alert"/></svg>Report a bug</button>
                 <button type="button" class="ghost" id="about-copy"><svg class="icon"><use href="#i-copy"/></svg>Copy diagnostics</button>
               </div>
-              <p class="settings-fineprint">Built with Tauri, axum, and a small Rust engine. No accounts, no ads, no bundled offers.</p>
+              <p class="settings-fineprint">Free and open source under the MIT license. Built with Tauri, axum, and a small Rust engine. No accounts, no ads, no bundled offers.</p>
             </section>
 
             <section class="settings-panel" data-settings-panel="privacy" role="tabpanel" hidden>
               <div class="settings-panel-head">
                 <h3>Privacy policy</h3>
-                <p>Last updated 8 November 2026.</p>
+                <p>Last updated 10 November 2026.</p>
               </div>
               <div class="policy-intro">
                 <span class="status-pill"><i></i>Local only</span>
@@ -829,6 +861,7 @@
                 <ul>
                   <li>Arus only connects to servers you ask it to download from or scan.</li>
                   <li>Referer, cookies, and user-agent values are forwarded only to the file host, so authenticated downloads keep working.</li>
+                  <li>If update checks are on, Arus asks GitHub for the latest release after launch. GitHub sees that request like any other web visit; Arus sends no account, machine, or download data.</li>
                   <li>The engine listens on 127.0.0.1 and is not reachable from other machines.</li>
                 </ul>
               </div>
@@ -841,10 +874,26 @@
                 </ul>
               </div>
               <div class="policy-block">
+                <h4>Support</h4>
+                <ul>
+                  <li>The QRIS code is generated on this PC from the merchant code. Arus never sees or stores payment details.</li>
+                  <li>GitHub and Discord open in your default browser when you click them.</li>
+                </ul>
+              </div>
+              <div class="policy-block">
+                <h4>Bug reports</h4>
+                <ul>
+                  <li>Reports are manual. Arus sends nothing until you open Report a bug under About, describe the problem, and press Send.</li>
+                  <li>A report contains your description, optional contact, app and Windows version, a summary of settings, failure counts, and recent error logs.</li>
+                  <li>Folder paths, download links, and URL query values are stripped before a report leaves this PC.</li>
+                  <li>Reports go to arus.xinet.id and are stored privately, readable by the maintainer only. No account is created.</li>
+                </ul>
+              </div>
+              <div class="policy-block">
                 <h4>Clipboard and telemetry</h4>
                 <ul>
                   <li>Clipboard watching reads links locally and can be turned off under Behaviour.</li>
-                  <li>There is no telemetry, analytics, account system, or cloud sync.</li>
+                  <li>There is no automatic telemetry, analytics, account system, or cloud sync. Only a bug report you send yourself leaves this PC.</li>
                 </ul>
               </div>
               <p class="settings-fineprint">This policy ships with the app and changes when the app changes.</p>
@@ -860,6 +909,129 @@
           </div>
         </footer>
       </form>
+    </dialog>
+
+    <dialog class="modal setup-modal" id="setup-dialog" aria-labelledby="setup-title">
+      <div class="modal-card">
+        <header class="modal-head">
+          <div>
+            <p class="setup-eyebrow">First run</p>
+            <h2 id="setup-title">Get Arus ready</h2>
+            <p>Downloads work already. Browser capture is the only optional step.</p>
+          </div>
+          <button type="button" class="icon-btn" data-close aria-label="Close setup" title="Close"><svg class="icon"><use href="#i-x"/></svg></button>
+        </header>
+        <div class="setup-body">
+          <div class="setup-step">
+            <span class="setup-number">1</span>
+            <div class="setup-copy">
+              <h3>Add browser capture <span class="setup-badge">Optional</span></h3>
+              <p>Chrome and Edge can hand video, audio, and links to Arus. Browsers block silent installs, so this takes one manual step and is remembered after.</p>
+              <div class="setup-actions">
+                <button type="button" class="primary" id="setup-open-browser"><svg class="icon"><use href="#i-globe"/></svg>Open extensions page</button>
+                <button type="button" class="ghost" id="setup-copy-path"><svg class="icon"><use href="#i-copy"/></svg>Copy folder path</button>
+              </div>
+              <div class="path-box">
+                <span class="mono" id="setup-ext-path">extension folder</span>
+              </div>
+              <ol class="steps">
+                <li>In the page that opens, turn on <strong>Developer mode</strong>.</li>
+                <li>Click <strong>Load unpacked</strong> and choose the folder above.</li>
+                <li>Come back here. Arus notices the extension on its own.</li>
+              </ol>
+              <div class="status-row">
+                <span class="status-pill is-off" id="setup-status"><i></i><span id="setup-status-copy">Waiting for the extension</span></span>
+                <button type="button" class="link-btn" id="setup-check">Check again</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <footer class="modal-foot">
+          <span class="hint">You can repeat this later under Settings, then Capture.</span>
+          <div class="foot-actions">
+            <button type="button" class="ghost" id="setup-skip">Skip for now</button>
+            <button type="button" class="primary" id="setup-done">Finish setup</button>
+          </div>
+        </footer>
+      </div>
+    </dialog>
+
+    <dialog class="modal support-modal" id="support-dialog" aria-labelledby="support-title">
+      <div class="modal-card">
+        <header class="modal-head">
+          <div>
+            <h2 id="support-title">Support Arus</h2>
+            <p>Arus is free and open source. If it saves you time, you can leave a tip. Never required.</p>
+          </div>
+          <button type="button" class="icon-btn" data-close aria-label="Close support" title="Close"><svg class="icon"><use href="#i-x"/></svg></button>
+        </header>
+        <div class="support-body">
+          <div class="support-copy">
+            <label class="field">
+              <span>Amount</span>
+              <div class="support-presets" id="support-presets" role="group" aria-label="Quick amounts">
+                <button type="button" class="preset" data-amount="10000">Rp 10 rb</button>
+                <button type="button" class="preset" data-amount="25000">Rp 25 rb</button>
+                <button type="button" class="preset" data-amount="50000">Rp 50 rb</button>
+                <button type="button" class="preset" data-amount="100000">Rp 100 rb</button>
+              </div>
+              <div class="input-row support-amount-row">
+                <span class="support-currency">Rp</span>
+                <input id="support-amount" inputmode="numeric" autocomplete="off" spellcheck="false" value="25.000" aria-label="Tip amount in rupiah">
+              </div>
+              <small class="field-hint" id="support-amount-hint">Any amount from Rp 1.000. The QR updates as you type.</small>
+            </label>
+            <p class="settings-fineprint">Scan with a bank or e-wallet app that supports QRIS. Payment goes straight to the merchant. Arus never sees your payment details.</p>
+            <p class="support-merchant">XINET - SOFTWARE · NMID ID1026618986677 · A01</p>
+          </div>
+          <div class="support-qr">
+            <div class="qr-frame" id="support-qr" aria-live="polite"></div>
+            <p class="qr-amount" id="support-qr-amount">Rp 25.000</p>
+            <p class="qr-note">The code carries the amount you choose.</p>
+          </div>
+        </div>
+        <footer class="modal-foot">
+          <span class="hint">Thanks either way. Arus stays free for everyone.</span>
+          <div class="foot-actions">
+            <button type="button" class="ghost" data-close>Close</button>
+          </div>
+        </footer>
+      </div>
+    </dialog>
+
+    <dialog class="modal report-modal" id="report-dialog" aria-labelledby="report-title">
+      <div class="modal-card">
+        <header class="modal-head">
+          <div>
+            <h2 id="report-title">Report a bug</h2>
+            <p>Describe what broke. Recent logs are attached so the same failure can be traced.</p>
+          </div>
+          <button type="button" class="icon-btn" data-close aria-label="Close report" title="Close"><svg class="icon"><use href="#i-x"/></svg></button>
+        </header>
+        <div class="report-body">
+          <label class="field">
+            <span>What happened?</span>
+            <textarea id="report-message" rows="4" maxlength="4000" spellcheck="false" placeholder="Example: a download stopped at 80% and Retry did nothing."></textarea>
+          </label>
+          <label class="field">
+            <span>Contact (optional)</span>
+            <input id="report-contact" maxlength="200" autocomplete="off" spellcheck="false" placeholder="Discord handle or email if a reply is welcome">
+          </label>
+          <div class="report-attach">
+            <strong>Attached automatically</strong>
+            <span id="report-summary">App and Windows version, settings summary, failure counts, and recent errors. Links, folder paths, and URL tokens are removed.</span>
+          </div>
+          <p class="field-hint">Nothing is sent until you press Send. Reports are stored privately on arus.xinet.id.</p>
+        </div>
+        <footer class="modal-foot">
+          <span class="hint" id="report-status" role="status"></span>
+          <div class="foot-actions">
+            <button type="button" class="ghost" id="report-github">Open GitHub issue</button>
+            <button type="button" class="ghost" id="report-copy">Copy report</button>
+            <button type="button" class="primary" id="report-send">Send report</button>
+          </div>
+        </footer>
+      </div>
     </dialog>
 
     <dialog class="modal small" id="confirm-dialog" aria-labelledby="confirm-title" aria-describedby="confirm-text">
@@ -887,6 +1059,8 @@
 
     <div class="toasts" id="toasts" popover="manual"></div>
 
+    <script src="/vendor/qrcode.js"></script>
+    <script src="/vendor/qris.js"></script>
     <script src="/app.js"></script>
   </body>
 </html>

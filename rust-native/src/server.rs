@@ -1,5 +1,5 @@
 use crate::engine::{AddInput, AppState};
-use crate::model::{public_download, Download};
+use crate::model::{now_ms, public_download, Download};
 use crate::scan::scan_page;
 use axum::body::Bytes;
 use axum::extract::{Path, Request, State};
@@ -12,7 +12,7 @@ use axum::{Json, Router};
 use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::convert::Infallible;
-use std::path::Path as FsPath;
+use std::path::{Path as FsPath, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
 use tokio_stream::wrappers::ReceiverStream;
@@ -64,6 +64,7 @@ fn router(state: Arc<AppState>) -> Router {
         .route("/api/state", get(api_state))
         .route("/api/events", get(api_events))
         .route("/api/meta", get(api_meta))
+        .route("/api/update-check", get(api_update_check))
         .route("/api/show", post(api_show))
         .route("/api/downloads", post(api_add))
         .route("/api/history/clear", post(api_clear_history))
@@ -75,6 +76,11 @@ fn router(state: Arc<AppState>) -> Router {
         .route("/api/scan", post(api_scan))
         .route("/api/capture", post(api_capture))
         .route("/api/open-extension-folder", post(api_open_extension))
+        .route(
+            "/api/open-extension-browser",
+            post(api_open_extension_browser),
+        )
+        .route("/api/open-url", post(api_open_url))
         .route("/api/open-downloads-folder", post(api_open_downloads))
         .route("/api/open-data-folder", post(api_open_data))
         .route("/", get(api_index))
@@ -85,12 +91,13 @@ fn router(state: Arc<AppState>) -> Router {
         .route("/popup.html", get(api_popup))
         .route("/progress.html", get(api_progress))
         .route("/assets/{name}", get(api_asset))
+        .route("/vendor/{name}", get(api_vendor))
         .route("/favicon.ico", get(api_favicon))
         .layer(middleware::from_fn_with_state(state.clone(), guard))
         .with_state(state)
 }
 
-async fn guard(State(_state): State<Arc<AppState>>, req: Request, next: Next) -> Response {
+async fn guard(State(state): State<Arc<AppState>>, req: Request, next: Next) -> Response {
     let method = req.method().clone();
     let path = req.uri().path().to_string();
     let host_header = req
@@ -113,8 +120,11 @@ async fn guard(State(_state): State<Arc<AppState>>, req: Request, next: Next) ->
         if !is_allowed_origin(origin, &host_header) {
             return forbid("Origin is not allowed");
         }
-        if is_extension_origin(origin) && !extension_may_use(&method, &path) {
-            return forbid("Extension origin cannot use this endpoint");
+        if is_extension_origin(origin) {
+            if !extension_may_use(&method, &path) {
+                return forbid("Extension origin cannot use this endpoint");
+            }
+            state.mark_extension_seen();
         }
         cors_origin = Some(origin.clone());
     }
@@ -270,7 +280,258 @@ async fn api_meta(State(state): State<Arc<AppState>>) -> Json<Value> {
         "stateFile": state.store_path.to_string_lossy(),
         "extensionPath": extension_path,
         "extensionExists": extension_exists,
+        "extensionConnected": state.extension_connected(),
+        "extensionSeenAt": state.extension_seen_at(),
     }))
+}
+
+async fn api_update_check(State(state): State<Arc<AppState>>) -> Json<Value> {
+    Json(check_for_update(&state).await)
+}
+
+async fn check_for_update(state: &Arc<AppState>) -> Value {
+    const REPO: &str = "arielbudinex-oss/Arus-Download-Manager";
+    const CACHE_MS: u64 = 6 * 60 * 60 * 1000;
+    const ERROR_CACHE_MS: u64 = 5 * 60 * 1000;
+    let now = now_ms();
+    {
+        let cache = state.update_cache.lock();
+        if let Some((expires_at, cached)) = cache.as_ref() {
+            if now < *expires_at {
+                return cached.clone();
+            }
+        }
+    }
+    let api_url = format!("https://api.github.com/repos/{REPO}/releases/latest");
+    let release_url = format!("https://github.com/{REPO}/releases/latest");
+    let mut payload = json!({
+        "current": state.version,
+        "latest": Value::Null,
+        "available": false,
+        "url": release_url,
+        "checkedAt": now,
+        "error": Value::Null,
+    });
+    let response = state
+        .client
+        .get(&api_url)
+        .header(reqwest::header::ACCEPT, "application/vnd.github+json")
+        .timeout(Duration::from_secs(8))
+        .send()
+        .await;
+    match response {
+        Ok(resp) if resp.status().is_success() => match resp.json::<Value>().await {
+            Ok(body) => {
+                let tag = body
+                    .get("tag_name")
+                    .and_then(|value| value.as_str())
+                    .unwrap_or("")
+                    .trim();
+                let latest = tag.trim_start_matches(['v', 'V']).to_string();
+                if !latest.is_empty() {
+                    payload["latest"] = json!(latest);
+                    payload["available"] = json!(version_newer(&latest, &state.version));
+                    if let Some(url) = body.get("html_url").and_then(|value| value.as_str()) {
+                        payload["url"] = json!(url);
+                    }
+                    payload["publishedAt"] = body
+                        .get("published_at")
+                        .cloned()
+                        .unwrap_or(Value::Null);
+                }
+            }
+            Err(err) => payload["error"] = json!(format!("Could not read the release: {err}")),
+        },
+        Ok(resp) => payload["error"] = json!(format!("GitHub returned {}", resp.status())),
+        Err(err) => payload["error"] = json!(format!("Update check failed: {err}")),
+    }
+    let ttl = if payload["error"].is_null() {
+        CACHE_MS
+    } else {
+        ERROR_CACHE_MS
+    };
+    *state.update_cache.lock() = Some((now + ttl, payload.clone()));
+    payload
+}
+
+fn numeric_version(version: &str) -> Vec<u64> {
+    version
+        .trim_start_matches(['v', 'V'])
+        .split('.')
+        .map(|part| {
+            part.chars()
+                .take_while(|character| character.is_ascii_digit())
+                .collect::<String>()
+                .parse::<u64>()
+                .unwrap_or(0)
+        })
+        .collect()
+}
+
+fn version_newer(candidate: &str, current: &str) -> bool {
+    let candidate = numeric_version(candidate);
+    let current = numeric_version(current);
+    for index in 0..candidate.len().max(current.len()) {
+        let left = *candidate.get(index).unwrap_or(&0);
+        let right = *current.get(index).unwrap_or(&0);
+        if left != right {
+            return left > right;
+        }
+    }
+    false
+}
+
+async fn api_open_url(Json(body): Json<Value>) -> Response {
+    let Some(url) = body.get("url").and_then(|value| value.as_str()) else {
+        return json_error(StatusCode::BAD_REQUEST, "url is required");
+    };
+    if !is_allowed_external_url(url) {
+        return json_error(StatusCode::BAD_REQUEST, "URL is not allowed");
+    }
+    open_external(url);
+    Json(json!({ "ok": true })).into_response()
+}
+
+fn is_allowed_external_url(value: &str) -> bool {
+    let Ok(parsed) = url::Url::parse(value) else {
+        return false;
+    };
+    parsed.scheme() == "https"
+        && parsed.username().is_empty()
+        && matches!(
+            parsed.host_str(),
+            Some("github.com") | Some("arielbudinex-oss.github.io") | Some("discord.gg")
+        )
+}
+
+async fn api_open_extension_browser(State(state): State<Arc<AppState>>) -> Response {
+    if !state.extension_dir.join("manifest.json").exists() {
+        return json_error(StatusCode::NOT_FOUND, "The extension folder is missing");
+    }
+    let Some(browser) = find_browser() else {
+        return json_error(
+            StatusCode::FAILED_DEPENDENCY,
+            "Chrome, Edge, Brave, or Vivaldi was not found",
+        );
+    };
+    match std::process::Command::new(&browser.exe)
+        .arg(browser.page)
+        .spawn()
+    {
+        Ok(_) => Json(json!({
+            "ok": true,
+            "browser": browser.name,
+            "page": browser.page,
+            "extensionPath": state.extension_dir.to_string_lossy(),
+        }))
+        .into_response(),
+        Err(err) => json_error(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            &format!("Could not open {}: {err}", browser.name),
+        ),
+    }
+}
+
+struct BrowserLaunch {
+    name: &'static str,
+    exe: PathBuf,
+    page: &'static str,
+}
+
+fn default_browser_prog_id() -> String {
+    #[cfg(target_os = "windows")]
+    {
+        let output = std::process::Command::new("reg")
+            .args([
+                "query",
+                r"HKCU\Software\Microsoft\Windows\Shell\Associations\UrlAssociations\https\UserChoice",
+                "/v",
+                "ProgId",
+            ])
+            .output();
+        if let Ok(output) = output {
+            let text = String::from_utf8_lossy(&output.stdout);
+            if let Some(value) = text.split("REG_SZ").nth(1) {
+                return value.trim().to_ascii_lowercase();
+            }
+        }
+    }
+    String::new()
+}
+
+fn find_browser() -> Option<BrowserLaunch> {
+    let prog_id = default_browser_prog_id();
+    let program_files = std::env::var_os("ProgramFiles").map(PathBuf::from);
+    let program_files_x86 = std::env::var_os("ProgramFiles(x86)").map(PathBuf::from);
+    let local_app_data = std::env::var_os("LOCALAPPDATA").map(PathBuf::from);
+    let roots = [
+        program_files,
+        program_files_x86,
+        local_app_data,
+    ];
+    let join = |base: &PathBuf, parts: &[&str]| -> PathBuf {
+        let mut path = base.clone();
+        for part in parts {
+            path.push(part);
+        }
+        path
+    };
+    let mut chrome_paths = Vec::new();
+    let mut edge_paths = Vec::new();
+    let mut brave_paths = Vec::new();
+    let mut vivaldi_paths = Vec::new();
+    for root in roots.iter().flatten() {
+        chrome_paths.push(join(root, &["Google", "Chrome", "Application", "chrome.exe"]));
+        edge_paths.push(join(
+            root,
+            &["Microsoft", "Edge", "Application", "msedge.exe"],
+        ));
+        brave_paths.push(join(
+            root,
+            &["BraveSoftware", "Brave-Browser", "Application", "brave.exe"],
+        ));
+        vivaldi_paths.push(join(root, &["Vivaldi", "Application", "vivaldi.exe"]));
+    }
+    let mut browsers: Vec<(&'static str, Vec<PathBuf>, &'static str)> = vec![
+        ("Chrome", chrome_paths, "chrome://extensions"),
+        ("Edge", edge_paths, "edge://extensions"),
+        ("Brave", brave_paths, "chrome://extensions"),
+        ("Vivaldi", vivaldi_paths, "chrome://extensions"),
+    ];
+    let preferred = if prog_id.contains("chrome") {
+        Some(0)
+    } else if prog_id.contains("edge") {
+        Some(1)
+    } else if prog_id.contains("brave") {
+        Some(2)
+    } else if prog_id.contains("vivaldi") {
+        Some(3)
+    } else {
+        None
+    };
+    if let Some(index) = preferred {
+        let entry = browsers.remove(index);
+        browsers.insert(0, entry);
+    }
+    browsers
+        .into_iter()
+        .find_map(|(name, paths, page)| {
+            paths
+                .into_iter()
+                .find(|path| path.exists())
+                .map(|exe| BrowserLaunch { name, exe, page })
+        })
+}
+
+fn open_external(url: &str) {
+    #[cfg(target_os = "windows")]
+    {
+        let _ = std::process::Command::new("explorer.exe").arg(url).spawn();
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        let _ = std::process::Command::new("xdg-open").arg(url).spawn();
+    }
 }
 
 async fn api_show(State(state): State<Arc<AppState>>) -> StatusCode {
@@ -603,9 +864,27 @@ async fn api_asset(State(state): State<Arc<AppState>>, Path(name): Path<String>)
         return (StatusCode::NOT_FOUND, "Not found").into_response();
     }
     let path = state.assets_dir.join(safe);
-    match tokio::fs::read(&path).await {
+    serve_file(&path, "application/octet-stream").await
+}
+
+async fn api_vendor(State(state): State<Arc<AppState>>, Path(name): Path<String>) -> Response {
+    let safe = FsPath::new(&name)
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("");
+    if safe.is_empty() || safe != name {
+        return (StatusCode::NOT_FOUND, "Not found").into_response();
+    }
+    let path = state.ui_dir.join("vendor").join(safe);
+    serve_file(&path, "application/octet-stream").await
+}
+
+async fn serve_file(path: &FsPath, fallback_mime: &str) -> Response {
+    match tokio::fs::read(path).await {
         Ok(bytes) => {
-            let mime = mime_guess::from_path(&path).first_raw().unwrap_or("application/octet-stream");
+            let mime = mime_guess::from_path(path)
+                .first_raw()
+                .unwrap_or(fallback_mime);
             (
                 StatusCode::OK,
                 [

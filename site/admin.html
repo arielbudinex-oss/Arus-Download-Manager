@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="theme-color" content="#090b0e">
+<meta name="color-scheme" content="dark">
+<title>Laporan bug · Arus</title>
+<link rel="icon" href="assets/favicon.ico" sizes="any">
+<link rel="stylesheet" href="styles.css">
+<style>
+  body { min-height: 100vh; }
+  .admin-wrap { max-width: 980px; margin: 0 auto; padding: 40px 24px 80px; }
+  .admin-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 28px; }
+  .admin-brand { display: flex; align-items: center; gap: 12px; }
+  .admin-brand img { width: 30px; height: 30px; border-radius: 8px; }
+  .admin-brand strong { font-size: 18px; letter-spacing: -0.02em; }
+  .admin-brand span { color: var(--faint); font-size: 13px; }
+  .gate { max-width: 420px; margin: 12vh auto 0; padding: 26px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+  .gate h1 { font-size: 21px; margin-bottom: 6px; letter-spacing: -0.02em; }
+  .gate p { color: var(--muted); font-size: 14px; margin-bottom: 18px; }
+  .gate label { display: block; font-size: 12px; color: var(--faint); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.08em; }
+  .gate input { width: 100%; height: 44px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--line-strong); background: var(--bg-soft); outline: none; }
+  .gate input:focus { border-color: var(--accent); }
+  .gate button { width: 100%; height: 44px; margin-top: 12px; border: 0; border-radius: 12px; background: var(--accent); color: #090b0e; font-weight: 650; }
+  .gate .gate-note { margin-top: 12px; font-size: 12px; color: var(--faint); margin-bottom: 0; }
+  .admin-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 18px; }
+  .admin-bar .count { font-size: 13px; color: var(--muted); margin-right: auto; }
+  .admin-btn { height: 36px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--line-strong); background: var(--surface); font-size: 13px; }
+  .admin-btn:hover { background: var(--surface-2); }
+  .admin-btn[disabled] { opacity: 0.5; cursor: default; }
+  .admin-search { height: 36px; width: min(260px, 100%); padding: 0 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg-soft); font-size: 13px; outline: none; }
+  .admin-search:focus { border-color: var(--line-strong); }
+  .rep-list { display: grid; gap: 14px; }
+  .rep { border: 1px solid var(--line); border-radius: 16px; background: var(--surface); padding: 18px 18px 14px; }
+  .rep-top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 12px; margin-bottom: 10px; }
+  .rep-top strong { font-size: 15px; }
+  .rep-meta { display: flex; flex-wrap: wrap; gap: 6px 10px; font-size: 12px; color: var(--faint); }
+  .rep-meta span { display: inline-flex; align-items: center; gap: 4px; }
+  .rep-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--faint); }
+  .rep-msg { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; color: var(--text); margin-bottom: 10px; }
+  .rep-contact { font-size: 13px; color: var(--muted); margin-bottom: 10px; overflow-wrap: anywhere; }
+  .rep details { border-top: 1px solid var(--line); padding-top: 10px; margin-top: 10px; }
+  .rep summary { cursor: pointer; font-size: 12px; color: var(--muted); }
+  .rep pre { margin: 10px 0 0; padding: 12px; border-radius: 10px; background: var(--bg-soft); border: 1px solid var(--line); font-size: 11.5px; line-height: 1.55; overflow: auto; max-height: 320px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .rep-actions { display: flex; gap: 8px; margin-top: 12px; }
+  .rep-actions button { height: 30px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--line); background: transparent; font-size: 12px; color: var(--muted); }
+  .rep-actions button:hover { color: var(--text); border-color: var(--line-strong); }
+  .empty { padding: 40px 20px; text-align: center; border: 1px dashed var(--line-strong); border-radius: 16px; color: var(--muted); font-size: 14px; }
+  .admin-msg { min-height: 18px; font-size: 12.5px; color: var(--faint); margin-top: 10px; }
+  .admin-msg.is-error { color: #f2b8b8; }
+  .badge { display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: 999px; background: var(--accent-soft); border: 1px solid var(--line); font-size: 11px; color: var(--accent); }
+  @media (max-width: 560px) {
+    .admin-wrap { padding: 24px 16px 60px; }
+    .gate { margin-top: 6vh; padding: 20px; }
+  }
+</style>
+</head>
+<body>
+<main class="admin-wrap">
+  <header class="admin-head">
+    <div class="admin-brand">
+      <img src="assets/icon.png" alt="" width="30" height="30">
+      <div><strong>Arus</strong><br><span>Laporan bug</span></div>
+    </div>
+    <button type="button" class="admin-btn" id="lock-btn" hidden>Kunci lagi</button>
+  </header>
+
+  <section class="gate" id="gate" aria-labelledby="gate-title">
+    <h1 id="gate-title">Masuk ke laporan</h1>
+    <p>Halaman ini hanya untuk pemilik Arus. Kunci disimpan di tab ini dan hilang saat tab ditutup.</p>
+    <form id="gate-form">
+      <label for="gate-key">Kunci akses</label>
+      <input id="gate-key" type="password" autocomplete="current-password" spellcheck="false" required>
+      <button type="submit" id="gate-submit">Buka laporan</button>
+    </form>
+    <p class="gate-note">Kunci diatur lewat env REPORTS_KEY di Vercel.</p>
+    <p class="admin-msg" id="gate-msg" role="status"></p>
+  </section>
+
+  <section id="dash" hidden>
+    <div class="admin-bar">
+      <span class="count" id="rep-count">0 laporan</span>
+      <input class="admin-search" id="rep-search" type="search" placeholder="Cari isi laporan atau versi" aria-label="Cari laporan">
+      <button type="button" class="admin-btn" id="rep-refresh">Muat ulang</button>
+      <button type="button" class="admin-btn" id="rep-copy-all">Salin semua</button>
+    </div>
+    <p class="admin-msg" id="rep-msg" role="status"></p>
+    <div class="rep-list" id="rep-list"></div>
+  </section>
+</main>
+
+<script>
+(() => {
+  const KEY_STORE = 'arus.reports.key';
+  const state = { key: '', reports: [], filter: '', busy: false };
+  const $ = (s) => document.querySelector(s);
+  const gate = $('#gate');
+  const dash = $('#dash');
+  const gateMsg = $('#gate-msg');
+  const repMsg = $('#rep-msg');
+  const list = $('#rep-list');
+  const count = $('#rep-count');
+  const lockBtn = $('#lock-btn');
+
+  function setMsg(el, text, error) {
+    el.textContent = text || '';
+    el.classList.toggle('is-error', Boolean(error));
+  }
+
+  function readKey() {
+    try { return sessionStorage.getItem(KEY_STORE) || ''; } catch { return ''; }
+  }
+  function writeKey(value) {
+    try {
+      if (value) sessionStorage.setItem(KEY_STORE, value);
+      else sessionStorage.removeItem(KEY_STORE);
+    } catch { /* private mode */ }
+  }
+
+  function el(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
+  }
+
+  function formatDate(iso) {
+    if (!iso) return 'tanpa tanggal';
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) return iso;
+    return date.toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' });
+  }
+
+  function render() {
+    list.textContent = '';
+    const filter = state.filter.trim().toLowerCase();
+    const reports = state.reports.filter((report) => {
+      if (!filter) return true;
+      const haystack = `${report.message || ''} ${report.contact || ''} ${report.app?.version || ''} ${report.id || ''}`.toLowerCase();
+      return haystack.includes(filter);
+    });
+    count.textContent = `${reports.length} dari ${state.reports.length} laporan`;
+    if (!reports.length) {
+      list.appendChild(el('div', 'empty', state.reports.length ? 'Tidak ada yang cocok dengan pencarian.' : 'Belum ada laporan masuk.'));
+      return;
+    }
+    for (const report of reports) {
+      const card = el('article', 'rep');
+      const top = el('div', 'rep-top');
+      top.appendChild(el('strong', '', report.app?.version ? `Arus ${report.app.version}` : 'Arus'));
+      const meta = el('div', 'rep-meta');
+      meta.appendChild(el('span', '', formatDate(report.createdAt)));
+      if (report.app?.build) {
+        const dot = el('i', 'dot'); dot.setAttribute('aria-hidden', 'true');
+        meta.appendChild(dot);
+        meta.appendChild(el('span', '', `build ${report.app.build}`));
+      }
+      if (report.request?.country) {
+        meta.appendChild(el('i', 'dot'));
+        meta.appendChild(el('span', '', report.request.country));
+      }
+      if (Array.isArray(report.logs) && report.logs.length) {
+        meta.appendChild(el('i', 'dot'));
+        meta.appendChild(el('span', '', `${report.logs.length} log`));
+      }
+      top.appendChild(meta);
+      card.appendChild(top);
+      card.appendChild(el('p', 'rep-msg', report.message || '(kosong)'));
+      if (report.contact) card.appendChild(el('p', 'rep-contact', `Kontak: ${report.contact}`));
+      if (report.diagnostics) {
+        const details = document.createElement('details');
+        details.appendChild(el('summary', '', 'Diagnostik'));
+        details.appendChild(el('pre', '', JSON.stringify(report.diagnostics, null, 2)));
+        card.appendChild(details);
+      }
+      if (Array.isArray(report.logs) && report.logs.length) {
+        const details = document.createElement('details');
+        details.appendChild(el('summary', '', `Log terakhir (${report.logs.length})`));
+        const lines = report.logs.map((entry) => `${entry.at || ''} [${entry.level || 'log'}] ${entry.message || ''}`).join('\n');
+        details.appendChild(el('pre', '', lines));
+        card.appendChild(details);
+      }
+      const actions = el('div', 'rep-actions');
+      const copy = el('button', '', 'Salin JSON');
+      copy.type = 'button';
+      copy.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(JSON.stringify(report, null, 2));
+          copy.textContent = 'Tersalin';
+          setTimeout(() => { copy.textContent = 'Salin JSON'; }, 1600);
+        } catch {
+          setMsg(repMsg, 'Clipboard tidak tersedia.', true);
+        }
+      });
+      actions.appendChild(copy);
+      actions.appendChild(el('span', 'badge', report.id || ''));
+      card.appendChild(actions);
+      list.appendChild(card);
+    }
+  }
+
+  async function load() {
+    if (!state.key || state.busy) return;
+    state.busy = true;
+    setMsg(repMsg, 'Mengambil laporan…');
+    try {
+      const res = await fetch(`/api/reports?limit=100`, {
+        headers: { 'x-reports-key': state.key },
+        cache: 'no-store'
+      });
+      const data = await res.json().catch(() => null);
+      if (res.status === 401) throw new Error('Kunci akses salah.');
+      if (!res.ok) throw new Error(data?.error || `Gagal memuat (${res.status})`);
+      state.reports = Array.isArray(data.reports) ? data.reports : [];
+      setMsg(repMsg, data.hasMore ? 'Menampilkan 30 laporan terbaru. Masih ada laporan lama.' : '');
+      render();
+      dash.hidden = false;
+      gate.hidden = true;
+      lockBtn.hidden = false;
+      writeKey(state.key);
+    } catch (error) {
+      setMsg(state.reports.length ? repMsg : gateMsg, error.message, true);
+      if (!state.reports.length) {
+        dash.hidden = true;
+        gate.hidden = false;
+        lockBtn.hidden = true;
+        state.key = '';
+        writeKey('');
+      }
+    } finally {
+      state.busy = false;
+    }
+  }
+
+  $('#gate-form').addEventListener('submit', (event) => {
+    event.preventDefault();
+    const value = $('#gate-key').value.trim();
+    if (!value) return;
+    state.key = value;
+    setMsg(gateMsg, '');
+    load();
+  });
+
+  $('#rep-refresh').addEventListener('click', () => load());
+
+  $('#rep-search').addEventListener('input', (event) => {
+    state.filter = event.target.value;
+    render();
+  });
+
+  $('#rep-copy-all').addEventListener('click', async () => {
+    if (!state.reports.length) return;
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(state.reports, null, 2));
+      setMsg(repMsg, 'Semua laporan tersalin.');
+    } catch {
+      setMsg(repMsg, 'Clipboard tidak tersedia.', true);
+    }
+  });
+
+  lockBtn.addEventListener('click', () => {
+    state.key = '';
+    state.reports = [];
+    writeKey('');
+    gate.hidden = false;
+    dash.hidden = true;
+    lockBtn.hidden = true;
+    list.textContent = '';
+    $('#gate-key').value = '';
+    setMsg(repMsg, '');
+    setMsg(gateMsg, '');
+    $('#gate-key').focus();
+  });
+
+  const saved = readKey();
+  if (saved) {
+    state.key = saved;
+    dash.hidden = false;
+    gate.hidden = true;
+    lockBtn.hidden = false;
+    load();
+  } else {
+    $('#gate-key').focus();
+  }
+})();
+</script>
+</body>
+</html>

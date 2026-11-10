@@ -1,0 +1,8 @@
+{
+  "name": "arus-site",
+  "version": "1.0.1",
+  "private": true,
+  "dependencies": {
+    "@vercel/blob": "^2.9.0"
+  }
+}

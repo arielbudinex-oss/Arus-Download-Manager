@@ -3,7 +3,7 @@ use parking_lot::Mutex;
 use serde_json::{json, Value};
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::broadcast;
@@ -95,6 +95,8 @@ pub struct AppState {
     canceled_hook: Mutex<Option<CanceledHook>>,
     clipboard: Mutex<Option<(String, u64)>>,
     save_pending: AtomicBool,
+    extension_seen_at: AtomicU64,
+    pub update_cache: Mutex<Option<(u64, Value)>>,
 }
 
 pub enum RunError {
@@ -273,7 +275,21 @@ impl AppState {
             canceled_hook: Mutex::new(None),
             clipboard: Mutex::new(None),
             save_pending: AtomicBool::new(false),
+            extension_seen_at: AtomicU64::new(0),
+            update_cache: Mutex::new(None),
         })
+    }
+
+    pub fn mark_extension_seen(&self) {
+        self.extension_seen_at.store(now_ms(), Ordering::Relaxed);
+    }
+
+    pub fn extension_seen_at(&self) -> u64 {
+        self.extension_seen_at.load(Ordering::Relaxed)
+    }
+
+    pub fn extension_connected(&self) -> bool {
+        self.extension_seen_at() > 0
     }
 
     pub fn set_window_opener(&self, opener: WindowOpener) {
@@ -1152,6 +1168,7 @@ impl AppState {
                 "notifications",
                 "minimizeToTray",
                 "launchAtLogin",
+                "checkUpdates",
             ] {
                 if let Some(value) = patch.get(key) {
                     let flag = value.as_bool().unwrap_or(false);
@@ -1160,6 +1177,7 @@ impl AppState {
                         "notifications" => settings.notifications = flag,
                         "minimizeToTray" => settings.minimize_to_tray = flag,
                         "launchAtLogin" => settings.launch_at_login = flag,
+                        "checkUpdates" => settings.check_updates = flag,
                         _ => {}
                     }
                 }
