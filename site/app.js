@@ -182,6 +182,19 @@
         var live = el.closest('.meta-live');
         if (live) {
           live.hidden = true;
+          var sep = live.nextElementSibling;
+          if (sep && sep.classList.contains('meta-sep')) sep.hidden = true;
+          return;
+        }
+        var finalMeta = el.closest('.final-meta');
+        if (finalMeta) {
+          el.hidden = true;
+          var pulse = el.previousElementSibling;
+          if (pulse && pulse.classList.contains('pulse')) pulse.hidden = true;
+          return;
+        }
+        if (el.closest('.community-stats')) {
+          el.parentElement.hidden = true;
           return;
         }
         el.textContent = '-';
@@ -194,9 +207,20 @@
     var downloads = Number(lastStats.downloads) || 0;
     var label = downloadLabel(downloads);
     $$('[data-download-count]').forEach(function (el) {
+      el.hidden = false;
       el.textContent = label;
       var live = el.closest('.meta-live');
-      if (live) live.hidden = false;
+      if (live) {
+        live.hidden = false;
+        var sep = live.nextElementSibling;
+        if (sep && sep.classList.contains('meta-sep')) sep.hidden = false;
+      }
+      var finalMeta = el.closest('.final-meta');
+      if (finalMeta) {
+        var pulse = el.previousElementSibling;
+        if (pulse && pulse.classList.contains('pulse')) pulse.hidden = false;
+      }
+      if (el.closest('.community-stats')) el.parentElement.hidden = false;
     });
     $$('[data-download-total]').forEach(function (el) { el.textContent = fmt.format(downloads); });
     $$('[data-stars]').forEach(function (el) { el.textContent = fmt.format(Number(lastStats.stars) || 0); });

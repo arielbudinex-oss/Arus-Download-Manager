@@ -1,10 +1,14 @@
 const REPO = 'arielbudinex-oss/Arus-Download-Manager';
 const CACHE = 'public, s-maxage=600, stale-while-revalidate=3600';
+const MEMORY_TTL = 5 * 60 * 1000;
+
+let memory = { at: 0, data: null };
 
 function json(res, status, payload, cache) {
   res.statusCode = status;
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.setHeader('Cache-Control', cache);
+  res.setHeader('CDN-Cache-Control', cache);
   res.end(JSON.stringify(payload));
 }
 
@@ -67,15 +71,24 @@ module.exports = async function handler(req, res) {
     return;
   }
 
+  if (memory.data && Date.now() - memory.at < MEMORY_TTL) {
+    json(res, 200, memory.data, CACHE);
+    return;
+  }
+
   try {
-    json(res, 200, await fromGitHub(), CACHE);
+    const data = await fromGitHub();
+    memory = { at: Date.now(), data };
+    json(res, 200, data, CACHE);
     return;
   } catch {
     /* GitHub bisa membatasi permintaan tanpa token */
   }
 
   try {
-    json(res, 200, await fromShields(), CACHE);
+    const data = await fromShields();
+    memory = { at: Date.now(), data };
+    json(res, 200, data, CACHE);
     return;
   } catch {
     json(res, 502, { error: 'Stats unavailable' }, 'no-store');
