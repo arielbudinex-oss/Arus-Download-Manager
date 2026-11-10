@@ -38,6 +38,7 @@ async function fromGitHub() {
   let downloads = 0;
   (Array.isArray(releases) ? releases : []).forEach((release) => {
     (release.assets || []).forEach((asset) => {
+      if (!/\.(exe|msi)$/i.test(asset.name || '')) return;
       downloads += Number(asset.download_count) || 0;
     });
   });

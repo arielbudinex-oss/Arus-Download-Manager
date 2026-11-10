@@ -220,6 +220,7 @@
         var downloads = 0;
         (Array.isArray(releases) ? releases : []).forEach(function (release) {
           (release.assets || []).forEach(function (asset) {
+            if (!/\.(exe|msi)$/i.test(asset.name || '')) return;
             downloads += Number(asset.download_count) || 0;
           });
         });
