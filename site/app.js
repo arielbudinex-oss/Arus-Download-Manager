@@ -60,83 +60,19 @@
     revealEls.forEach(function (el) { revealObserver.observe(el); });
   }
 
-  /* ----------------------------------------------------------- count up */
-
-  function animateCounter(el) {
-    var target = Number(el.getAttribute('data-count')) || 0;
-    if (reduced) {
-      el.textContent = fmt.format(target);
-      return;
-    }
-    var duration = 1000;
-    var startedAt = null;
-    var safety = window.setTimeout(function () {
-      el.textContent = fmt.format(target);
-    }, duration + 400);
-    function frame(now) {
-      if (startedAt === null) startedAt = now;
-      var progress = Math.min(1, (now - startedAt) / duration);
-      var eased = 1 - Math.pow(1 - progress, 3);
-      el.textContent = fmt.format(Math.round(target * eased));
-      if (progress < 1) requestAnimationFrame(frame);
-      else window.clearTimeout(safety);
-    }
-    requestAnimationFrame(frame);
-  }
-
-  var counters = $$('[data-count]');
-  if (counters.length) {
-    if (reduced || !('IntersectionObserver' in window)) {
-      counters.forEach(animateCounter);
-    } else {
-      var counterObserver = new IntersectionObserver(function (entries) {
-        entries.forEach(function (entry) {
-          if (entry.isIntersecting) {
-            animateCounter(entry.target);
-            counterObserver.unobserve(entry.target);
-          }
-        });
-      }, { threshold: 0.4 });
-      counters.forEach(function (el) { counterObserver.observe(el); });
-    }
-  }
-
-  /* ---------------------------------------------------- motion accents */
+  /* ------------------------------------------------------- motion accents */
 
   var finePointer = window.matchMedia('(pointer: fine)').matches;
-  var tilt = $('[data-tilt]');
-  if (tilt && finePointer && !reduced) {
-    tilt.addEventListener('pointermove', function (event) {
-      var rect = tilt.getBoundingClientRect();
-      var x = (event.clientX - rect.left) / rect.width - 0.5;
-      var y = (event.clientY - rect.top) / rect.height - 0.5;
-      tilt.style.setProperty('--ry', (x * 4).toFixed(2) + 'deg');
-      tilt.style.setProperty('--rx', (-y * 3).toFixed(2) + 'deg');
-    });
-    tilt.addEventListener('pointerleave', function () {
-      tilt.style.setProperty('--ry', '0deg');
-      tilt.style.setProperty('--rx', '0deg');
-    });
-  }
-
   if (finePointer && !reduced) {
     $$('.magnetic').forEach(function (button) {
       button.addEventListener('pointermove', function (event) {
         var rect = button.getBoundingClientRect();
         var x = (event.clientX - rect.left) / rect.width - 0.5;
         var y = (event.clientY - rect.top) / rect.height - 0.5;
-        button.style.transform = 'translate3d(' + (x * 5).toFixed(2) + 'px,' + (y * 4).toFixed(2) + 'px,0)';
+        button.style.transform = 'translate3d(' + (x * 4).toFixed(2) + 'px,' + (y * 3).toFixed(2) + 'px,0)';
       });
       button.addEventListener('pointerleave', function () {
         button.style.transform = '';
-      });
-    });
-
-    $$('.card').forEach(function (card) {
-      card.addEventListener('pointermove', function (event) {
-        var rect = card.getBoundingClientRect();
-        card.style.setProperty('--mx', (event.clientX - rect.left) + 'px');
-        card.style.setProperty('--my', (event.clientY - rect.top) + 'px');
       });
     });
   }
@@ -170,6 +106,28 @@
 
   var lastStats = null;
   var statsFallback = false;
+  var downloadShown = null;
+
+  function countUp(el, target) {
+    if (reduced) {
+      el.textContent = fmt.format(target);
+      return;
+    }
+    var duration = 900;
+    var startedAt = null;
+    var safety = window.setTimeout(function () {
+      el.textContent = fmt.format(target);
+    }, duration + 400);
+    function frame(now) {
+      if (startedAt === null) startedAt = now;
+      var progress = Math.min(1, (now - startedAt) / duration);
+      var eased = 1 - Math.pow(1 - progress, 3);
+      el.textContent = fmt.format(Math.round(target * eased));
+      if (progress < 1) requestAnimationFrame(frame);
+      else window.clearTimeout(safety);
+    }
+    requestAnimationFrame(frame);
+  }
 
   function renderStats() {
     if (statsFallback) {
@@ -179,7 +137,11 @@
     }
     if (!lastStats) return;
     var downloads = Number(lastStats.downloads) || 0;
-    $$('[data-download-total]').forEach(function (el) { el.textContent = fmt.format(downloads); });
+    $$('[data-download-total]').forEach(function (el) {
+      if (downloadShown === null) countUp(el, downloads);
+      else el.textContent = fmt.format(downloads);
+    });
+    downloadShown = downloads;
     $$('[data-stars]').forEach(function (el) { el.textContent = fmt.format(Number(lastStats.stars) || 0); });
     $$('[data-forks]').forEach(function (el) { el.textContent = fmt.format(Number(lastStats.forks) || 0); });
   }

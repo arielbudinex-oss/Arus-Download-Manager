@@ -182,6 +182,119 @@
     'Maksimal Rp 50.000.000.': 'Maximum Rp 50,000,000.'
   });
 
+  Object.assign(DICT, {
+    /* hero */
+    'File besar,': 'Big files,',
+    'tanpa bikin PC berat.': 'without slowing your PC.',
+    'Arus memecah file menjadi beberapa bagian, mengunduhnya bersamaan, lalu menulis langsung ke disk. Installer cukup 3,5 MB karena antarmuka memakai WebView2 yang sudah ada di Windows.': 'Arus splits a file into parts, downloads them at the same time, then writes straight to disk. The installer is only 3.5 MB because the interface uses the WebView2 that is already part of Windows.',
+    'Versi 1.0.3': 'Version 1.0.3',
+    'Tanpa akun': 'No account',
+    'Antrean unduhan': 'Download queue',
+    'Tangkapan layar asli. Data di dalamnya hanya contoh.': 'A real screenshot. The data in it is sample data.',
+    'Unduhan installer': 'Installer downloads',
+    'Installer': 'Installer',
+    'Koneksi paralel': 'Parallel connections',
+    'Lisensi': 'License',
+    '3,5 MB': '3.5 MB',
+    'Angka Arus diukur di Windows 11 64-bit. Kolom lain adalah kisaran umum aplikasi sejenis, bukan benchmark resmi.': 'Arus figures were measured on Windows 11 64-bit. The other columns are typical ranges for similar apps, not an official benchmark.',
+
+    /* use cases */
+    'Kapan berguna': 'When it helps',
+    'Tiga situasi yang paling sering.': 'Three situations that come up most.',
+    'Kalau salah satunya terdengar familiar, bagian ini menjelaskan apa yang Arus lakukan di situasi tersebut.': 'If one of them sounds familiar, this is what Arus does in that situation.',
+    'File besar': 'Large files',
+    'Jaringan terbatas': 'Limited network',
+    'File yang harus utuh': 'Files that must stay intact',
+    'ISO, installer game, arsip dataset.': 'ISOs, game installers, dataset archives.',
+    'Unduhan besar yang putus di tengah jalan paling menyakitkan. Arus memecah file, mengunduh bagiannya bersamaan, lalu melanjutkan dari bagian terakhir selama server mendukung range request.': 'Large downloads that die halfway are the most painful. Arus splits the file, downloads the parts at the same time, then resumes from the last part as long as the server supports range requests.',
+    'Rapat tetap lancar.': 'Meetings stay smooth.',
+    'Batasi kecepatan total atau hanya untuk unduhan tertentu, dan tentukan berapa unduhan yang boleh berjalan bersamaan. Bandwidth tidak lagi dihabiskan satu antrean panjang.': 'Limit the total speed or just one download, and decide how many downloads may run at once. A long queue no longer eats all the bandwidth.',
+    'Tahu persis isinya tidak berubah.': 'Know exactly that it did not change.',
+    'Setelah selesai, Arus menghitung SHA-256 file. Cocokkan dengan nilai dari sumber sebelum file dipakai, dipasang, atau dibagikan ke orang lain.': 'When it finishes, Arus computes the file SHA-256. Compare it with the value from the source before the file is used, installed, or shared.',
+
+    /* features */
+    'Yang dipakai setiap hari.': 'What gets used every day.',
+    'Bukan daftar fitur untuk halaman promosi. Ini yang muncul saat kamu benar-benar mengunduh file besar.': 'Not a feature list for a promo page. These are the things that show up when you actually download large files.',
+    'Kalau server mendukung range request, file dipecah dan diunduh bersamaan. Satu koneksi yang lambat tidak menahan bagian lain.': 'If the server supports range requests, the file is split and downloaded at the same time. One slow connection does not hold up the other parts.',
+    'Tentukan jam mulai, batasi unduhan yang berjalan bersamaan, dan atur urutannya.': 'Set a start time, limit how many downloads run at once, and arrange their order.',
+    'Atur batas per unduhan atau untuk semuanya. Berguna saat rapat atau saat jaringan dipakai bersama.': 'Set a limit per download or for all of them. Useful during a meeting or when the network is shared.',
+    'Arus menghitung hash setelah file selesai, supaya bisa kamu cocokkan dengan nilai dari sumbernya.': 'Arus computes the hash when the file finishes, so you can compare it with the value from the source.',
+    'Ekstensi Chrome dan Edge menangkap tautan unduhan. Panduan pemasangan muncul sekali saat Arus pertama dibuka; kalau dilewati, cukup salin URL dan Arus menawarkannya.': 'The Chrome and Edge extensions capture download links. The setup guide appears once when Arus first opens; if you skip it, just copy the URL and Arus will offer it.',
+    'Popup di pojok muncul saat unduhan berjalan atau selesai, lalu menutup sendiri. Bisa diatur di preferensi notifikasi.': 'A popup in the corner appears while a download runs or finishes, then closes on its own. It can be adjusted in the notification settings.',
+    '1–32 koneksi · range request': '1–32 connections · range requests',
+    'Butuh ffmpeg': 'Requires ffmpeg',
+    'Jam mulai · batas antrean': 'Start time · queue limit',
+    'Global atau per file': 'Global or per file',
+    'Setelah unduhan selesai': 'After the download finishes',
+    'Tutup otomatis': 'Closes itself',
+
+    /* limits */
+    'Batas': 'Limits',
+    'Yang tidak Arus lakukan.': 'What Arus does not do.',
+    'Batas ini disengaja. Kalau salah satunya justru yang kamu cari, lebih baik tahu sekarang.': 'These limits are intentional. If one of them is exactly what you are looking for, better to know now.',
+    'Stream berproteksi': 'Protected streams',
+    'Tidak ada unduhan dari YouTube atau situs yang memproteksi kontennya. Fitur seperti itu melanggar ketentuan platform dan tidak akan ditambahkan.': 'There are no downloads from YouTube or sites that protect their content. That kind of feature violates platform terms and will not be added.',
+    'Telemetri otomatis': 'Automatic telemetry',
+    'Tidak ada laporan pemakaian yang dikirim diam-diam. Arus hanya terhubung keluar saat mengunduh, mengecek rilis, atau saat kamu mengirim laporan bug sendiri.': 'No usage reports are sent quietly. Arus only connects out when downloading, checking for releases, or when you send a bug report yourself.',
+    'Akun dan iklan': 'Accounts and ads',
+    'Tidak perlu mendaftar, tidak ada iklan, dan tidak ada fitur yang dikunci di balik pembayaran. Dukungan QRIS sepenuhnya opsional.': 'No sign-up, no ads, and no features locked behind a payment. QRIS support is entirely optional.',
+
+    /* community */
+    'Dikembangkan terbuka.': 'Built in the open.',
+    'Kode, rilis, dan diskusi ada di tempat terbuka. Laporkan bug di GitHub, atau mampir ke Discord kalau ingin bertanya.': 'Code, releases, and discussion are out in the open. Report bugs on GitHub, or drop by Discord if you have questions.',
+    'Discord · komunitas': 'Discord · community',
+    'Kode sumber dan rilis': 'Source code and releases',
+    'Tanya dan diskusi': 'Questions and discussion',
+    'Seluruh kode tersedia, termasuk riwayat rilis dan issue tracker.': 'All the code is available, including the release history and issue tracker.',
+    'Tempat bertanya soal pemakaian, laporan awal, atau sekadar ngobrol soal download manager.': 'A place to ask about usage, early reports, or just talk about download managers.',
+    'Buka GitHub': 'Open GitHub',
+    'Terbuka untuk siapa saja': 'Open to everyone',
+
+    /* closing */
+    'Pasang Arus, lalu biarkan ia bekerja.': 'Install Arus, then let it work.',
+    'Installer 3,5 MB untuk Windows 10/11 64-bit. Panduan ekstensi muncul sekali setelah dibuka. Tidak ada akun, tidak ada iklan.': 'A 3.5 MB installer for Windows 10/11 64-bit. The extension guide appears once after it opens. No account, no ads.',
+    'Versi 1.0.3 · Rilis 10 November 2026': 'Version 1.0.3 · Released November 10, 2026',
+
+    /* footer */
+    'Batasan': 'Limits',
+
+    /* guide */
+    'Panduan': 'Guide',
+    'Isi panduan': 'Guide contents',
+    'Dari installer sampai unduhan pertama.': 'From installer to your first download.',
+    'Tiga tahap, sekitar tiga menit. Ekstensi hanya perlu dipasang sekali per browser; setelah itu Arus menerima tautan dari halaman yang kamu buka.': 'Three stages, about three minutes. The extension only has to be installed once per browser; after that, Arus accepts links from the pages you open.',
+    'Pasang aplikasi': 'Install the app',
+    'Sambungkan browser': 'Connect your browser',
+    'Unduh pertama': 'First download',
+    'Yang perlu disiapkan: Windows 10/11 64-bit. Chrome, Edge, Brave, atau Chromium hanya untuk menangkap media. ffmpeg hanya untuk HLS/DASH.': 'What you need: Windows 10/11 64-bit. Chrome, Edge, Brave, or Chromium only for capturing media. ffmpeg only for HLS/DASH.',
+    '±1 menit': '±1 min',
+    '±2 menit': '±2 min',
+    '±30 detik': '±30 sec',
+    'Tekan Unduh untuk Windows di halaman ini. Installer': 'Press Download for Windows on this page. The installer',
+    'berukuran sekitar 3,5 MB.': 'is about 3.5 MB.',
+    'Jalankan installer. Karena belum ditandatangani, Windows SmartScreen bisa meminta konfirmasi: pilih More info, lalu Run anyway.': 'Run the installer. Because it is not code-signed, Windows SmartScreen may ask for confirmation: choose More info, then Run anyway.',
+    'Ikuti proses pemasangan. Setelah selesai, Arus terbuka dan tetap tersedia di tray meski jendelanya ditutup.': 'Follow the setup. When it finishes, Arus opens and stays available in the tray even after you close its window.',
+    'Panduan ekstensi muncul sekali setelah setup. Kamu bisa mengikutinya langsung, atau menutupnya dan membuka Pengaturan → Tangkapan browser kapan saja.': 'The extension guide appears once after setup. You can follow it right away, or close it and open Settings → Browser capture whenever you like.',
+    'Di Arus, buka Pengaturan → Tangkapan browser. Status di sana menunjukkan apakah ekstensi sudah terdeteksi.': 'In Arus, open Settings → Browser capture. The status there shows whether the extension has been detected.',
+    'Klik Buka folder. Folder': 'Click Open folder. The',
+    'sudah menyertai aplikasi, jadi tidak ada file terpisah yang perlu diunduh.': 'folder ships with the app, so there is no separate file to download.',
+    'Klik Buka halaman ekstensi. Kalau Chrome atau Edge menampilkan pemilihan profil, pilih profil yang biasa dipakai lalu buka': 'Click Open extensions page. If Chrome or Edge shows a profile picker, choose the profile you normally use and open',
+    '. Di Edge, alamatnya': '. In Edge, the address is',
+    'Aktifkan Developer mode di pojok kanan atas, pilih Load unpacked, lalu arahkan ke folder': 'Turn on Developer mode in the top right corner, choose Load unpacked, then point it at the',
+    'tadi.': 'folder.',
+    'Kembali ke Arus. Status berubah menjadi Ekstensi tersambung. Kalau belum, tekan tombol periksa sekali lagi.': 'Go back to Arus. The status changes to Extension connected. If it does not, press the check button once more.',
+    'Chrome dan Edge tidak mengizinkan pemasangan senyap, jadi langkah ini memang manual. Cukup sekali per browser. Saat Arus diperbarui, klik Reload di halaman ekstensi.': 'Chrome and Edge do not allow silent installs, so this step is manual. Once per browser is enough. When Arus is updated, click Reload on the extensions page.',
+    'membuka unduhan baru. Tempel URL, lalu pilih folder simpan.': 'opens a new download. Paste the URL, then choose a save folder.',
+    'Atur jumlah koneksi 1–32 dan batas kecepatan bila perlu. Untuk file biasa, pengaturan awal sudah cukup.': 'Set the number of connections (1–32) and a speed limit if you need one. For regular files, the defaults are enough.',
+    'Untuk video atau audio, klik tombol ekstensi Unduh dengan Arus, atau arahkan kursor ke media dan tekan': 'For video or audio, click the Download with Arus extension button, or point at the media and press',
+    'Menyalin URL juga cukup: Arus menawarkan tautan yang ada di clipboard. Ekstensi dan clipboard sama-sama membutuhkan Arus yang sedang berjalan.': 'Copying the URL also works: Arus offers links found in your clipboard. Both the extension and the clipboard need Arus to be running.',
+    'Pantau antrean. Jeda dan Lanjutkan bekerja selama server mendukung range request, jadi unduhan tidak mengulang dari nol.': 'Watch the queue. Pause and Resume work as long as the server supports range requests, so the download does not start over.',
+    'Setelah selesai, Arus menghitung SHA-256 dan menampilkan popup singkat. Buka folder dari baris unduhan, atau cocokkan hash dengan nilai dari sumber.': 'When it finishes, Arus computes SHA-256 and shows a brief popup. Open the folder from the download row, or compare the hash with the value from the source.',
+    'HLS dan DASH memerlukan ffmpeg untuk menggabungkan segmen. Pintasan lain:': 'HLS and DASH require ffmpeg to join segments. Other shortcuts:',
+    'mencari di antrean,': 'searches the queue,',
+    'membuka pengaturan.': 'opens settings.'
+  });
+
   const RULES = [
     [/^([\d.,]+) unduhan$/i, '$1 downloads'],
     [/^segmen (\d+)$/i, 'segment $1'],
