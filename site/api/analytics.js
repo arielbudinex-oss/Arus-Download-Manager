@@ -85,6 +85,10 @@ module.exports = async function handler(req, res) {
       })
       .sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime());
     const selected = matching.slice(0, MAX_BLOBS);
+    const since = collected
+      .map((blob) => (/^analytics\/(\d{4}-\d{2}-\d{2})\//.exec(blob.pathname || '') || [])[1])
+      .filter(Boolean)
+      .sort()[0] || null;
 
     const records = (await mapLimit(selected, CONCURRENCY, async (blob) => {
       try {
@@ -220,6 +224,7 @@ module.exports = async function handler(req, res) {
         .map((entry) => ({ code: entry.code, views: entry.views, visitors: entry.visitors.size })),
       sessions,
       batches: records.length,
+      since,
       truncated: matching.length > MAX_BLOBS
     });
   } catch (error) {
