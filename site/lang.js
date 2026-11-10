@@ -107,6 +107,7 @@
   "Semua rilis": "All releases",
   "Setelah unduhan selesai, Arus menghitung SHA-256 file agar bisa kamu cocokkan dengan nilai dari situs sumber.": "When a download finishes, Arus computes the file's SHA-256 so you can compare it with the value from the source site.",
   "Simpan gambar QR": "Save QR image",
+  "Situs ini mencatat statistik kunjungan sederhana: halaman yang dibuka, tombol yang diklik, alamat IP, dan perkiraan wilayah. Tidak ada cookie iklan.": "This site keeps simple visit statistics: pages opened, buttons clicked, IP address, and approximate region. No advertising cookies.",
   "Streaming ke disk": "Streaming to disk",
   "Tambah ke Arus": "Add to Arus",
   "Tampilan asli Arus. Data pada gambar adalah contoh.": "The real Arus interface. The data in the image is sample data.",
