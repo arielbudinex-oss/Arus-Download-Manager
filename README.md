@@ -75,10 +75,9 @@ cargo run
 
 ## Situs dan laporan bug
 
-Folder `site/` berisi situs promosi sekaligus endpoint laporan. Deploy dari dalam folder itu, bukan dari akar repo, supaya Vercel menyajikan halaman promosi:
+Folder `site/` berisi situs promosi sekaligus endpoint laporan. Project Vercel memakai Root Directory `site`, jadi deploy dijalankan dari akar repo. File `.vercelignore` menjaga agar hanya folder situs yang diunggah:
 
 ```powershell
-cd site
 vercel deploy --prod
 ```
 
