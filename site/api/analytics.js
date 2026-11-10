@@ -4,6 +4,11 @@ const { list } = require('@vercel/blob');
 const MAX_DAYS = 14;
 const MAX_BLOBS = 500;
 const CONCURRENCY = 25;
+const WIB_OFFSET = 7 * 60 * 60 * 1000;
+
+function wibDay(date) {
+  return new Date(date.getTime() + WIB_OFFSET).toISOString().slice(0, 10);
+}
 
 function json(res, status, payload) {
   res.statusCode = status;
@@ -66,7 +71,9 @@ module.exports = async function handler(req, res) {
   const requested = Number(new URL(req.url, 'http://x').searchParams.get('days'));
   const days = Math.min(Math.max(Number.isFinite(requested) && requested > 0 ? Math.round(requested) : 7, 1), MAX_DAYS);
   const now = new Date();
-  const cutoff = new Date(now.getTime() - (days - 1) * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const dayMs = 24 * 60 * 60 * 1000;
+  const cutoff = wibDay(new Date(now.getTime() - (days - 1) * dayMs));
+  const blobCutoff = wibDay(new Date(now.getTime() - days * dayMs));
 
   try {
     const collected = [];
@@ -81,7 +88,7 @@ module.exports = async function handler(req, res) {
     const matching = collected
       .filter((blob) => {
         const match = /^analytics\/(\d{4}-\d{2}-\d{2})\//.exec(blob.pathname || '');
-        return match && match[1] >= cutoff;
+        return match && match[1] >= blobCutoff;
       })
       .sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime());
     const selected = matching.slice(0, MAX_BLOBS);
@@ -114,7 +121,7 @@ module.exports = async function handler(req, res) {
     const ipMap = new Map();
 
     for (let offset = 0; offset < days; offset += 1) {
-      const date = new Date(now.getTime() - offset * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      const date = wibDay(new Date(now.getTime() - offset * dayMs));
       dayMap.set(date, { date, pageviews: 0, visitors: new Set() });
     }
 
@@ -139,7 +146,7 @@ module.exports = async function handler(req, res) {
 
     for (const record of records) {
       const at = new Date(record.at);
-      const date = Number.isNaN(at.getTime()) ? cutoff : at.toISOString().slice(0, 10);
+      const date = Number.isNaN(at.getTime()) ? cutoff : wibDay(at);
       const day = dayMap.get(date) || { date, pageviews: 0, visitors: new Set() };
       const vid = String(record.vid || '').slice(0, 64);
       if (vid) {
