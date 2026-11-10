@@ -1,0 +1,16 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "main-loopback",
+  "description": "Allow the loopback-served Arus UI to drive its own window and pick folders",
+  "windows": ["main", "complete-*"],
+  "remote": {
+    "urls": ["http://127.0.0.1:*/", "http://localhost:*/"]
+  },
+  "permissions": [
+    "allow-window-action",
+    "allow-pick-folder",
+    "allow-notify",
+    "allow-launch-at-login",
+    "allow-sync-settings"
+  ]
+}

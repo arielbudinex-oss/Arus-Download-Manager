@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark light">
+    <title>Arus Capture</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <header class="head">
+      <div class="brand">
+        <img class="logo" src="icons/icon-ui.svg" alt="">
+        <div class="brand-copy">
+          <strong>Arus</strong>
+        </div>
+      </div>
+      <div class="head-actions">
+        <div class="engine" id="server" title="Local engine">
+          <i class="dot" id="server-dot"></i>
+          <span id="server-text">Checking…</span>
+        </div>
+        <button class="icon-btn" id="refresh" type="button" title="Refresh" aria-label="Refresh">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3M19.5 4.5V9H15"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="context">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.2"/><path d="M3.8 12h16.4M12 3.8c2.4 2.2 3.6 5 3.6 8.2S14.4 18 12 20.2C9.6 18 8.4 15.2 8.4 12S9.6 6 12 3.8z"/></svg>
+      <span class="page-host" id="page-host">This page</span>
+    </div>
+
+    <div class="section-head">
+      <span>Media on this page</span>
+      <span class="count" id="count">0</span>
+    </div>
+
+    <div class="bulk" id="bulk" hidden>
+      <button class="bulk-btn" id="send-all" type="button">Send all</button>
+      <button class="bulk-btn" id="copy-all" type="button">Copy links</button>
+    </div>
+
+    <div class="list" id="list"></div>
+
+    <div class="empty" id="empty">
+      <div class="empty-glyph">
+        <img src="icons/icon-ui.svg" alt="">
+      </div>
+      <p id="empty-title">No media yet</p>
+      <span id="empty-hint">Play the video, then refresh.</span>
+    </div>
+
+    <div class="status" id="status" hidden></div>
+
+    <section class="integrations" aria-label="Browser integration">
+      <label class="toggle-row">
+        <span class="toggle-copy">
+          <strong>Take over downloads</strong>
+          <small>Chrome sends new downloads to Arus while it is running.</small>
+        </span>
+        <input type="checkbox" id="opt-takeover">
+        <i class="switch" aria-hidden="true"></i>
+      </label>
+      <label class="toggle-row">
+        <span class="toggle-copy">
+          <strong>Video button</strong>
+          <small>Show a download button when you point at a video.</small>
+        </span>
+        <input type="checkbox" id="opt-overlay">
+        <i class="switch" aria-hidden="true"></i>
+      </label>
+      <label class="toggle-row">
+        <span class="toggle-copy">
+          <strong>Panel on this site</strong>
+          <small id="opt-site-note">Turn the video button off for this host only.</small>
+        </span>
+        <input type="checkbox" id="opt-site">
+        <i class="switch" aria-hidden="true"></i>
+      </label>
+    </section>
+
+    <form class="manual" id="manual">
+      <label class="manual-label" for="url">Send a link</label>
+      <div class="manual-field">
+        <input id="url" type="url" placeholder="https://site.com/video.mp4" autocomplete="off" spellcheck="false">
+        <button class="send-link" type="submit" title="Send to Arus" aria-label="Send to Arus">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6.5 18.5 12 13 17.5"/></svg>
+        </button>
+      </div>
+      <p class="manual-hint">Direct files, HLS and DASH manifests.</p>
+    </form>
+
+    <footer class="foot">
+      <button class="foot-btn primary" id="open-app" type="button">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4.5h5.5V10M19 5 10.5 13.5"/><path d="M18.5 14v4.5a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2v-11a2 2 0 0 1 2-2H10"/></svg>
+        Open Arus
+      </button>
+      <button class="foot-btn" id="scan-page" type="button">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8.5V5.5a1.5 1.5 0 0 1 1.5-1.5h3M15.5 4H19a1.5 1.5 0 0 1 1.5 1.5v3M20 15.5v3A1.5 1.5 0 0 1 18.5 20h-3M8.5 20H5.5A1.5 1.5 0 0 1 4 18.5v-3"/><path d="M4 12h16"/></svg>
+        Scan page
+      </button>
+    </footer>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

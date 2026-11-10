@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Download complete</title>
+<style>
+  :root {
+    --bg: #1e1e1f;
+    --surface: #2c2c2e;
+    --surface-2: #3a3a3c;
+    --text: #f5f5f7;
+    --muted: #a1a1a6;
+    --faint: #8e8e93;
+    --border: rgba(255, 255, 255, 0.09);
+    --border-strong: rgba(255, 255, 255, 0.16);
+    --accent: #0a84ff;
+    --accent-hover: #3d9bff;
+    --green: #30d158;
+    --focus: #0a84ff;
+    --focus-ring: rgba(10, 132, 255, 0.32);
+    color-scheme: dark;
+  }
+
+  [data-theme="light"] {
+    --bg: #f2f2f4;
+    --surface: #ffffff;
+    --surface-2: #e7e7ea;
+    --text: #1d1d1f;
+    --muted: #6e6e73;
+    --faint: #86868b;
+    --border: rgba(0, 0, 0, 0.09);
+    --border-strong: rgba(0, 0, 0, 0.16);
+    --accent: #007aff;
+    --accent-hover: #2b8fff;
+    --green: #28a745;
+    --focus: #007aff;
+    --focus-ring: rgba(0, 122, 255, 0.26);
+    color-scheme: light;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { height: 100%; }
+
+  body {
+    margin: 0;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    font-size: 13px;
+    letter-spacing: -0.006em;
+    user-select: none;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .popup {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 13px 15px 14px;
+    animation: pop-in 160ms cubic-bezier(0.2, 0.9, 0.3, 1);
+  }
+
+  @keyframes pop-in {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .popup { animation: none; }
+    .timer::after { animation: none; opacity: 0.08; }
+  }
+
+  .head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-height: 20px;
+  }
+
+  .title {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: var(--muted);
+  }
+
+  .title svg {
+    width: 12px;
+    height: 12px;
+    color: var(--green);
+  }
+
+  .close {
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    margin: 0 -3px 0 0;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(120, 120, 128, 0.16);
+    color: var(--faint);
+    cursor: pointer;
+  }
+
+  .close:hover { background: rgba(120, 120, 128, 0.28); color: var(--text); }
+  .close svg { width: 10px; height: 10px; }
+
+  .close:focus-visible,
+  .btn:focus-visible {
+    outline: 3px solid var(--focus-ring);
+    outline-offset: 1px;
+  }
+
+  .file {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    min-width: 0;
+    margin-top: 8px;
+  }
+
+  .badge {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    border: 0;
+    border-radius: 9px;
+    background: linear-gradient(180deg, #4da3ff 0%, #0a84ff 55%, #0062d6 100%);
+    color: #fff;
+    font-family: "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    box-shadow: 0 4px 12px rgba(10, 132, 255, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  }
+
+  .info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .name {
+    overflow: hidden;
+    font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", sans-serif;
+    font-size: 13.5px;
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    font-size: 10.5px;
+    color: var(--faint);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .meta #size {
+    flex: none;
+    white-space: nowrap;
+  }
+
+  .meta .dot {
+    flex: none;
+    width: 2px;
+    height: 2px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.8;
+  }
+
+  .meta .path {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .meta .path[hidden],
+  .meta .dot[hidden] { display: none; }
+
+  .actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 7px;
+    margin-top: auto;
+    padding-top: 11px;
+  }
+
+  .btn {
+    height: 29px;
+    padding: 0 13px;
+    border: 0;
+    border-radius: 7px;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.12s ease, filter 0.12s ease;
+  }
+
+  .btn.quiet {
+    background: rgba(120, 120, 128, 0.18);
+    color: var(--text);
+  }
+
+  .btn.quiet:hover {
+    background: rgba(120, 120, 128, 0.28);
+  }
+
+  .btn.primary {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 1px 2px rgba(0, 0, 0, 0.2);
+  }
+
+  .btn.primary:hover { background: var(--accent-hover); }
+  .btn:active { filter: brightness(0.92); }
+
+  .timer {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 2px;
+    overflow: hidden;
+  }
+
+  .timer::after {
+    content: "";
+    display: block;
+    height: 100%;
+    background: var(--accent);
+    opacity: 0.35;
+    transform-origin: left center;
+    animation: drain 10s linear forwards;
+  }
+
+  .popup.is-paused .timer::after {
+    animation-play-state: paused;
+  }
+
+  @keyframes drain {
+    from { transform: scaleX(1); }
+    to { transform: scaleX(0); }
+  }
+
+</style>
+</head>
+<body>
+  <div class="popup" id="popup" role="status">
+    <div class="head">
+      <span class="title">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 8.5 6.4 12 13 4.5"></path>
+        </svg>
+        Download complete
+      </span>
+      <button class="close" id="close" type="button" aria-label="Dismiss">
+        <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+          <path d="M3 3l6 6M9 3 3 9"></path>
+        </svg>
+      </button>
+    </div>
+    <div class="file">
+      <div class="badge" id="badge" aria-hidden="true">FILE</div>
+      <div class="info">
+        <div class="name" id="name">Download</div>
+        <div class="meta">
+          <span id="size">File ready</span>
+          <i class="dot" id="dot" hidden></i>
+          <span class="path" id="folder" hidden></span>
+        </div>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn quiet" id="folder-btn" type="button">Show in folder</button>
+      <button class="btn primary" id="open" type="button">Open</button>
+    </div>
+    <i class="timer" aria-hidden="true"></i>
+  </div>
+  <script>
+    (function () {
+      const params = new URLSearchParams(location.search);
+      const id = params.get('id') || '';
+      const name = params.get('name') || 'Download';
+      const folder = params.get('folder') || '';
+      const bytes = Number(params.get('size')) || 0;
+      const popup = document.getElementById('popup');
+
+      document.documentElement.dataset.theme = params.get('theme') === 'light' ? 'light' : 'dark';
+      document.getElementById('name').textContent = name;
+      document.getElementById('name').title = name;
+      document.getElementById('size').textContent = formatSize(bytes);
+      document.getElementById('badge').textContent = fileKind(name);
+
+      if (folder) {
+        const path = document.getElementById('folder');
+        path.textContent = folder;
+        path.title = folder;
+        path.hidden = false;
+        document.getElementById('dot').hidden = false;
+      }
+
+      function formatSize(value) {
+        if (!value || value < 0) return 'File ready';
+        const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        let size = value;
+        let unit = 0;
+        while (size >= 1024 && unit < units.length - 1) {
+          size /= 1024;
+          unit += 1;
+        }
+        return (unit === 0 ? Math.round(size) : size.toFixed(size >= 100 ? 0 : 1)) + ' ' + units[unit];
+      }
+
+      function fileKind(value) {
+        const base = value.split(/[\\/]/).pop() || '';
+        const index = base.lastIndexOf('.');
+        if (index < 0 || index === base.length - 1) return 'FILE';
+        const ext = base.slice(index + 1).replace(/[^a-z0-9]/gi, '').toUpperCase();
+        return ext ? ext.slice(0, 4) : 'FILE';
+      }
+
+      function dismiss() {
+        if (typeof window.arusPopupClose === 'function') {
+          window.arusPopupClose();
+          return;
+        }
+        window.close();
+      }
+
+      function act(action) {
+        if (!id) {
+          dismiss();
+          return;
+        }
+        fetch('/api/downloads/' + encodeURIComponent(id) + '/' + action, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: '{}'
+        }).catch(function () {
+          dismiss();
+        });
+        setTimeout(dismiss, 250);
+      }
+
+      let timer = null;
+      function schedule() {
+        clearTimeout(timer);
+        timer = setTimeout(dismiss, 2000);
+      }
+
+      popup.addEventListener('mouseenter', function () {
+        clearTimeout(timer);
+        popup.classList.add('is-paused');
+      });
+      popup.addEventListener('mouseleave', function () {
+        popup.classList.remove('is-paused');
+        schedule();
+      });
+
+      document.getElementById('folder-btn').addEventListener('click', function () { act('open-folder'); });
+      document.getElementById('open').addEventListener('click', function () { act('open-file'); });
+      document.getElementById('close').addEventListener('click', dismiss);
+      document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') dismiss();
+      });
+
+      schedule();
+    })();
+  </script>
+</body>
+</html>

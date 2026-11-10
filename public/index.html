@@ -1,0 +1,892 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark light">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+    <title>Arus</title>
+    <link rel="icon" href="/assets/icon-32.png" sizes="32x32" type="image/png">
+    <link rel="apple-touch-icon" href="/assets/icon-256.png">
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/theme.css">
+  </head>
+  <body>
+    <svg class="sprite" aria-hidden="true" focusable="false">
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+      <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5"/><path d="M5 18.5h14"/></symbol>
+      <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16.2 16.2 4.3 4.3"/></symbol>
+      <symbol id="i-pause" viewBox="0 0 24 24"><path d="M9 6v12M15 6v12"/></symbol>
+      <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6.5" y="6.5" width="11" height="11" rx="1.5"/></symbol>
+      <symbol id="i-more" viewBox="0 0 24 24"><path d="M6 12h.01M12 12h.01M18 12h.01"/></symbol>
+      <symbol id="i-play" viewBox="0 0 24 24"><path d="M8.5 5.8v12.4L18.5 12z"/></symbol>
+      <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+      <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3.5 7.5A2 2 0 0 1 5.5 5.5h4l2 2h7a2 2 0 0 1 2 2v7.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></symbol>
+      <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 3.5v2.2M12 18.3v2.2M4.9 7.9l1.9 1.1M17.2 15l1.9 1.1M4.9 16.1l1.9-1.1M17.2 9l1.9-1.1M3.5 12h2.2M18.3 12h2.2"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+      <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 4 2.8 20h18.4z"/><path d="M12 10v4.5M12 17.2h.01"/></symbol>
+      <symbol id="i-video" viewBox="0 0 24 24"><rect x="3" y="5.5" width="12.5" height="13" rx="2.2"/><path d="m15.5 10.5 5-3v9l-5-3z"/></symbol>
+      <symbol id="i-audio" viewBox="0 0 24 24"><path d="M9 17.5V6.2l10-2v11.3"/><circle cx="6.8" cy="17.5" r="2.2"/><circle cx="16.8" cy="15.5" r="2.2"/></symbol>
+      <symbol id="i-doc" viewBox="0 0 24 24"><path d="M7 3.5h6.8L18 7.8v12.7H7z"/><path d="M13.8 3.5v4.3H18M9.5 12h6M9.5 15.5h6"/></symbol>
+      <symbol id="i-archive" viewBox="0 0 24 24"><path d="M4.5 8.5h15V19a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 19z"/><path d="M3.5 4.5h17v4h-17zM10 12h4"/></symbol>
+      <symbol id="i-program" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="m9 10-3 2 3 2M15 10l3 2-3 2"/></symbol>
+      <symbol id="i-image" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m4.5 17 4.7-4.5 4 3.6 2.6-2.4 3.7 3.3"/></symbol>
+      <symbol id="i-file" viewBox="0 0 24 24"><path d="M7 3.5h6.8L18 7.8v12.7H7z"/><path d="M13.8 3.5v4.3H18"/></symbol>
+      <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.2"/><path d="M3.8 12h16.4M12 3.8c2.4 2.2 3.6 5 3.6 8.2S14.4 18 12 20.2C9.6 18 8.4 15.2 8.4 12S9.6 6 12 3.8z"/></symbol>
+      <symbol id="i-link" viewBox="0 0 24 24"><path d="m10.5 13.5 3-3"/><path d="M8.2 15.8 6 18a3.5 3.5 0 0 1-5-5l3.5-3.5a3.5 3.5 0 0 1 5 0"/><path d="M15.8 8.2 18 6a3.5 3.5 0 0 1 5 5l-3.5 3.5a3.5 3.5 0 0 1-5 0"/></symbol>
+      <symbol id="i-external" viewBox="0 0 24 24"><path d="M14 4.5h5.5V10M19 5 10.5 13.5"/><path d="M18.5 14v4.5a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2v-11a2 2 0 0 1 2-2H10"/></symbol>
+      <symbol id="i-trash" viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l.8 12.2a1.5 1.5 0 0 0 1.5 1.3h5.4a1.5 1.5 0 0 0 1.5-1.3L17 7M10 10.5v6M14 10.5v6"/></symbol>
+      <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3M19.5 4.5V9H15"/></symbol>
+      <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.2"/><path d="M12 7.5V12l3 2"/></symbol>
+      <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="11" height="11" rx="2"/><path d="M15.5 8.5v-2a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
+      <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+      <symbol id="i-scan" viewBox="0 0 24 24"><path d="M4 8.5V5.5a1.5 1.5 0 0 1 1.5-1.5h3M15.5 4H19a1.5 1.5 0 0 1 1.5 1.5v3M20 15.5v3A1.5 1.5 0 0 1 18.5 20h-3M8.5 20H5.5A1.5 1.5 0 0 1 4 18.5v-3"/><path d="M4 12h16"/></symbol>
+      <symbol id="i-monitor" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="12" rx="1.8"/><path d="M9 20h6M12 16.5V20"/></symbol>
+      <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M4.9 4.9l1.6 1.6M17.5 17.5l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.9 19.1l1.6-1.6M17.5 6.5l1.6-1.6"/></symbol>
+      <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8.2 8.2 0 0 1 9.5 4a8.2 8.2 0 1 0 10.5 10.5z"/></symbol>
+      <symbol id="i-minimize" viewBox="0 0 24 24"><path d="M6 12h12"/></symbol>
+      <symbol id="i-maximize" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1.2"/></symbol>
+      <symbol id="i-gauge" viewBox="0 0 24 24"><path d="M4.2 17.5a8.5 8.5 0 1 1 15.6 0"/><path d="m12 13.5 3.6-4.2"/><circle cx="12" cy="14.2" r="1.6"/></symbol>
+      <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 3.8 8.2 4.2L12 12.2 3.8 8z"/><path d="m4.5 12 7.5 3.8 7.5-3.8M4.5 16l7.5 3.8 7.5-3.8"/></symbol>
+      <symbol id="i-up" viewBox="0 0 24 24"><path d="m6 14.5 6-6 6 6"/></symbol>
+      <symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9.5 6 6 6-6"/></symbol>
+      <symbol id="i-again" viewBox="0 0 24 24"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3"/><path d="M4.5 4.5V9H9"/></symbol>
+      <symbol id="i-inbox" viewBox="0 0 24 24"><path d="M4 13.5 6.2 5.5h11.6l2.2 8"/><path d="M4 13.5h4.5l1.5 2.5h4l1.5-2.5H20v5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5z"/></symbol>
+      <symbol id="i-clock-plus" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.2"/><path d="M12 7.5V12l3 2M18.5 17.5v4M16.5 19.5h4"/></symbol>
+      <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.2"/><path d="M12 11v5M12 8h.01"/></symbol>
+      <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3.5 5 6v5.5c0 4.3 2.9 7.7 7 9 4.1-1.3 7-4.7 7-9V6z"/><path d="m9 12 2.2 2.2L15.5 10"/></symbol>
+      <symbol id="i-keyboard" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M11 10h.01M15 10h.01M8 14h8"/></symbol>
+      <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 3 5.5 13.5H11L10 21l7.5-10.5H12z"/></symbol>
+      <symbol id="i-database" viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7.5" ry="2.8"/><path d="M4.5 6v6c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8V6M4.5 12v6c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8v-6"/></symbol>
+    </svg>
+
+    <div class="titlebar">
+      <div class="window-controls" id="window-controls" hidden>
+        <button class="window-btn close" data-window="close" title="Close" aria-label="Close"><svg class="icon"><use href="#i-x"/></svg></button>
+        <button class="window-btn" data-window="minimize" title="Minimize" aria-label="Minimize"><svg class="icon"><use href="#i-minimize"/></svg></button>
+        <button class="window-btn" data-window="maximize" title="Maximize" aria-label="Maximize"><svg class="icon"><use href="#i-maximize"/></svg></button>
+      </div>
+      <div class="brand">
+        <img class="brand-mark" src="/assets/icon-small.svg" alt="">
+        <span class="brand-name">Arus</span>
+      </div>
+    </div>
+
+    <div class="main" id="main">
+      <aside class="sidebar">
+        <button class="new-download" id="new-download">
+          <span class="new-icon"><svg class="icon"><use href="#i-plus"/></svg></span>
+          <span class="new-label">New download</span>
+          <kbd>Ctrl N</kbd>
+        </button>
+
+        <div class="nav-label">Library</div>
+        <nav class="nav" id="library-nav" aria-label="Library"></nav>
+
+        <div class="nav-label">Types</div>
+        <nav class="nav" id="type-nav" aria-label="Types"></nav>
+
+        <div class="side-card">
+          <div class="side-card-head">
+            <span>Queue</span>
+            <span class="mono" id="side-queue">0 / 4</span>
+          </div>
+          <div class="side-bar" aria-hidden="true"><span id="side-bar-fill"></span></div>
+          <div class="side-card-foot">
+            <span id="side-active">Idle</span>
+            <span id="side-waiting">0 waiting</span>
+          </div>
+        </div>
+
+        <div class="sidebar-foot">
+          <div class="live-speed" title="Total download speed">
+            <span class="live-dot" id="live-dot"></span>
+            <span class="live-value" id="global-speed">0 B/s</span>
+          </div>
+          <div class="sidebar-tools">
+            <button class="icon-btn" id="about-btn" title="About Arus" aria-label="About Arus">
+              <svg class="icon"><use href="#i-info"/></svg>
+            </button>
+            <button class="icon-btn" id="privacy-btn" title="Privacy policy" aria-label="Privacy policy">
+              <svg class="icon"><use href="#i-shield"/></svg>
+            </button>
+            <button class="icon-btn" id="settings-btn" title="Settings" aria-label="Settings">
+              <svg class="icon"><use href="#i-gear"/></svg>
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      <section class="workspace">
+        <header class="workspace-head">
+          <div class="head-copy">
+            <h1 id="view-title">All downloads</h1>
+            <p id="view-sub">Nothing here yet</p>
+          </div>
+          <div class="head-tools">
+            <div class="searchbox">
+              <svg class="icon"><use href="#i-search"/></svg>
+              <input id="search" type="search" placeholder="Search downloads" aria-label="Search downloads" autocomplete="off" spellcheck="false">
+              <kbd>Ctrl F</kbd>
+            </div>
+            <button class="icon-btn framed" id="open-folder" title="Open downloads folder" aria-label="Open downloads folder">
+              <svg class="icon"><use href="#i-folder"/></svg>
+            </button>
+            <button class="add-btn" id="add-btn" title="New download">
+              <svg class="icon"><use href="#i-plus"/></svg>
+              <span>New</span>
+            </button>
+          </div>
+        </header>
+
+        <section class="overview" aria-label="Download overview">
+          <article class="metric metric-speed">
+            <div class="metric-top">
+              <span class="metric-label">Throughput</span>
+              <span class="metric-chips">
+                <span class="metric-chip" id="metric-cap" hidden>n/a</span>
+                <span class="metric-live" id="metric-live">Idle</span>
+              </span>
+            </div>
+            <div class="metric-value">
+              <strong id="metric-speed">0 B/s</strong>
+            </div>
+            <div class="metric-chart">
+              <svg class="metric-spark" id="metric-spark" viewBox="0 0 600 88" preserveAspectRatio="none" aria-hidden="true"></svg>
+              <span class="metric-chart-note">last 48 s</span>
+            </div>
+            <div class="metric-foot">
+              <span id="metric-speed-sub">No active transfers</span>
+              <span id="metric-peak">peak n/a</span>
+            </div>
+          </article>
+
+          <article class="metric metric-queue">
+            <div class="metric-top">
+              <span class="metric-label">Active queue</span>
+              <svg class="icon metric-icon" aria-hidden="true"><use href="#i-layers"/></svg>
+            </div>
+            <div class="metric-value">
+              <strong id="metric-active">0</strong>
+              <span class="metric-unit">running</span>
+            </div>
+            <div class="metric-slots" id="metric-slots" aria-hidden="true"></div>
+            <div class="metric-rows">
+              <div><span>Downloading</span><strong id="queue-running">0</strong></div>
+              <div><span>Waiting</span><strong id="queue-waiting">0</strong></div>
+              <div><span>Paused</span><strong id="queue-paused">0</strong></div>
+            </div>
+            <div class="metric-foot">
+              <span id="metric-queue-sub">0 queued</span>
+              <span id="metric-slots-label">4 slots</span>
+            </div>
+          </article>
+
+          <article class="metric metric-library">
+            <div class="metric-top">
+              <span class="metric-label">Library</span>
+              <svg class="icon metric-icon" aria-hidden="true"><use href="#i-check"/></svg>
+            </div>
+            <div class="metric-value">
+              <strong id="metric-completed">0</strong>
+              <span class="metric-unit">files</span>
+            </div>
+            <div class="metric-rows">
+              <div><span>On disk</span><strong id="metric-library-size">0 B</strong></div>
+              <div><span>Lifetime</span><strong id="metric-lifetime">0 files</strong></div>
+            </div>
+            <div class="metric-foot">
+              <span id="metric-completed-sub">0 B in library</span>
+              <span id="metric-success">n/a</span>
+            </div>
+          </article>
+
+          <article class="metric metric-schedule">
+            <div class="metric-top">
+              <span class="metric-label">Scheduled</span>
+              <svg class="icon metric-icon" aria-hidden="true"><use href="#i-clock"/></svg>
+            </div>
+            <div class="metric-value">
+              <strong id="metric-scheduled">0</strong>
+              <span class="metric-unit">waiting</span>
+            </div>
+            <div class="metric-rows">
+              <div><span>Next start</span><strong id="metric-next">None</strong></div>
+              <div><span>In library</span><strong id="metric-total">0 files</strong></div>
+            </div>
+            <div class="metric-foot">
+              <span>Runs automatically</span>
+            </div>
+          </article>
+        </section>
+
+        <div class="stage-bar">
+          <div class="stage-stats">
+            <span id="stat-active">0 active</span>
+            <span class="stage-sep"></span>
+            <span id="stat-speed">0 B/s</span>
+            <span class="stage-sep" id="stat-limit-sep" hidden></span>
+            <span id="stat-limit" hidden>n/a</span>
+          </div>
+          <div class="stage-actions">
+            <button class="quiet" id="clear-history">Clear history</button>
+            <button class="quiet" id="pause-all">Pause all</button>
+            <button class="quiet" id="resume-all">Resume all</button>
+          </div>
+        </div>
+
+        <div class="stage">
+          <div class="list-head" aria-hidden="true" hidden>
+            <span></span>
+            <span>File</span>
+            <span>Status</span>
+            <span></span>
+          </div>
+          <div class="list" id="list" role="list"></div>
+
+          <div class="empty" id="empty" hidden>
+            <div class="empty-inner">
+              <div class="empty-glyph"><img src="/assets/icon-small.svg" alt=""></div>
+              <span class="empty-eyebrow" id="empty-eyebrow">Local download manager</span>
+              <h2 id="empty-title">Nothing here yet</h2>
+              <p id="empty-text">Add a link, drop a URL, or scan a web page for video and audio.</p>
+              <div class="empty-steps" id="empty-steps">
+                <article>
+                  <span class="empty-step-num">01</span>
+                  <strong>Add a link</strong>
+                  <small>Paste, drop, or import a list of URLs.</small>
+                </article>
+                <article>
+                  <span class="empty-step-num">02</span>
+                  <strong>Capture from the web</strong>
+                  <small>Send video, audio, and HLS from Chrome.</small>
+                </article>
+                <article>
+                  <span class="empty-step-num">03</span>
+                  <strong>Let the queue work</strong>
+                  <small>Segments, retries, and schedules run on their own.</small>
+                </article>
+              </div>
+              <div class="empty-actions">
+                <button class="primary" id="empty-add">
+                  <svg class="icon"><use href="#i-plus"/></svg>
+                  New download
+                </button>
+                <button class="ghost" id="empty-scan">
+                  <svg class="icon"><use href="#i-scan"/></svg>
+                  Scan a page
+                </button>
+                <button class="ghost" id="empty-batch">
+                  <svg class="icon"><use href="#i-layers"/></svg>
+                  Import links
+                </button>
+              </div>
+              <div class="empty-features" id="empty-features" aria-label="Built-in capabilities">
+                <span>HLS</span>
+                <span>DASH</span>
+                <span>Batch import</span>
+                <span>Scheduler</span>
+                <span>SHA-256</span>
+                <span>Speed caps</span>
+              </div>
+              <p class="empty-hint"><kbd>Ctrl N</kbd> or drop any link into the window</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="inspector" id="inspector" aria-label="Download details" hidden>
+        <div class="inspector-head">
+          <div class="inspector-title">
+            <div class="inspector-ident">
+              <div class="detail-icon" id="detail-icon"></div>
+              <div class="ident-copy">
+                <h2 id="detail-name">n/a</h2>
+              </div>
+            </div>
+            <p id="detail-host">n/a</p>
+          </div>
+          <button class="icon-btn" id="detail-close" title="Close panel" aria-label="Close details panel">
+            <svg class="icon"><use href="#i-x"/></svg>
+          </button>
+        </div>
+        <div class="inspector-body">
+          <div class="detail-summary">
+            <div class="detail-hero">
+              <div class="detail-ring" id="detail-ring">
+                <svg viewBox="0 0 76 76" aria-hidden="true">
+                  <circle class="ring-track" cx="38" cy="38" r="32"></circle>
+                  <circle class="ring-fill" id="detail-ring-fill" cx="38" cy="38" r="32"></circle>
+                </svg>
+                <span id="detail-percent" class="detail-percent">0%</span>
+              </div>
+              <div class="detail-hero-copy">
+                <span id="detail-status" class="status-chip">Queued</span>
+                <div class="detail-live">
+                  <strong id="detail-live-speed">n/a</strong>
+                  <span id="detail-live-eta"></span>
+                </div>
+                <p id="detail-note" class="detail-note">n/a</p>
+              </div>
+            </div>
+            <div class="detail-meter" id="detail-meter" role="progressbar" aria-label="Download progress" aria-valuemin="0" aria-valuemax="100">
+              <span class="detail-meter-fill" id="detail-meter-fill"></span>
+            </div>
+          </div>
+
+          <div class="spark">
+            <div class="spark-head">
+              <span class="section-label">Throughput</span>
+              <span class="spark-value" id="detail-spark-value">n/a</span>
+            </div>
+            <svg id="detail-spark" viewBox="0 0 300 48" preserveAspectRatio="none" aria-hidden="true"></svg>
+          </div>
+
+          <div class="detail-actions">
+            <button class="primary" id="detail-toggle">Pause</button>
+            <button class="ghost" id="detail-cancel" hidden>Cancel</button>
+            <button class="ghost" id="detail-open">Open file</button>
+            <button class="ghost" id="detail-folder">Show in folder</button>
+            <button class="ghost" id="detail-again" hidden>Download again</button>
+          </div>
+
+          <div class="detail-block queue-block">
+            <div class="section-label">Queue control</div>
+            <div class="queue-row">
+              <label class="priority-field">
+                <span>Priority</span>
+                <select id="detail-priority">
+                  <option value="high">High</option>
+                  <option value="normal">Normal</option>
+                  <option value="low">Low</option>
+                </select>
+              </label>
+              <button type="button" class="ghost" id="detail-start">Start now</button>
+            </div>
+            <div class="queue-row">
+              <label class="priority-field">
+                <span>Speed cap</span>
+                <select id="detail-speed-cap">
+                  <option value="0">No cap</option>
+                  <option value="1048576">1 MB/s</option>
+                  <option value="2097152">2 MB/s</option>
+                  <option value="5242880">5 MB/s</option>
+                  <option value="10485760">10 MB/s</option>
+                  <option value="26214400">25 MB/s</option>
+                  <option value="52428800">50 MB/s</option>
+                  <option value="104857600">100 MB/s</option>
+                </select>
+              </label>
+            </div>
+            <p class="detail-note" id="detail-queue-note">n/a</p>
+          </div>
+
+          <dl class="detail-grid">
+            <div><dt>Size</dt><dd id="detail-size">n/a</dd></div>
+            <div><dt>Downloaded</dt><dd id="detail-received">n/a</dd></div>
+            <div><dt>Speed</dt><dd id="detail-speed">n/a</dd></div>
+            <div><dt>ETA</dt><dd id="detail-eta">n/a</dd></div>
+            <div><dt>Connections</dt><dd id="detail-connections">n/a</dd></div>
+            <div><dt>Type</dt><dd id="detail-kind">n/a</dd></div>
+          </dl>
+
+          <div class="detail-block">
+            <div class="section-label">Segments</div>
+            <div class="segment-map" id="detail-segments"></div>
+            <p class="detail-note" id="detail-segment-note">n/a</p>
+          </div>
+
+          <div class="detail-block" id="detail-hash-block" hidden>
+            <div class="section-label">SHA-256</div>
+            <div class="hash-row">
+              <span class="hash-value" id="detail-hash">Not computed</span>
+              <button type="button" class="ghost" id="detail-hash-btn">Compute</button>
+            </div>
+            <p class="detail-note" id="detail-hash-note">Run a checksum to verify the saved file.</p>
+          </div>
+
+          <div class="detail-block">
+            <div class="section-label">Source</div>
+            <div class="copy-row">
+              <span id="detail-url" class="mono">n/a</span>
+              <button class="icon-btn" id="detail-copy" title="Copy link" aria-label="Copy link"><svg class="icon"><use href="#i-copy"/></svg></button>
+            </div>
+            <div class="detail-block-inner">
+              <span class="section-label">Saved to</span>
+              <span id="detail-path" class="mono">n/a</span>
+            </div>
+            <p class="detail-error" id="detail-error" hidden></p>
+          </div>
+
+          <button class="danger-link" id="detail-remove">
+            <svg class="icon"><use href="#i-trash"/></svg>
+            Remove download
+          </button>
+        </div>
+      </aside>
+    </div>
+
+    <div class="drop" id="drop" hidden>
+      <div class="drop-card">
+        <svg class="icon"><use href="#i-plus"/></svg>
+        <h2>Drop the link</h2>
+        <p>Release to start a new download.</p>
+      </div>
+    </div>
+
+    <dialog class="modal" id="add-dialog" aria-labelledby="add-title">
+      <form class="modal-card" id="add-form" method="dialog">
+        <header class="modal-head">
+          <div>
+            <h2 id="add-title">New download</h2>
+            <p>Paste a link, or scan a page for video and audio.</p>
+          </div>
+          <button type="button" class="icon-btn" data-close aria-label="Close" title="Close"><svg class="icon"><use href="#i-x"/></svg></button>
+        </header>
+
+        <div class="tabs" role="tablist" aria-label="Download source">
+          <button type="button" class="tab is-active" id="tab-link" data-tab="link" role="tab" aria-selected="true" aria-controls="panel-link">Direct link</button>
+          <button type="button" class="tab" id="tab-page" data-tab="page" role="tab" aria-selected="false" aria-controls="panel-page">Web page</button>
+          <button type="button" class="tab" id="tab-batch" data-tab="batch" role="tab" aria-selected="false" aria-controls="panel-batch">Batch</button>
+        </div>
+
+        <div class="tab-panel" id="panel-link" data-panel="link" role="tabpanel" aria-labelledby="tab-link">
+          <label class="field">
+            <span>URL</span>
+            <input id="add-url" placeholder="https://example.com/file.zip" autocomplete="off" spellcheck="false">
+          </label>
+          <div class="grid-2">
+            <label class="field">
+              <span>File name <em>optional</em></span>
+              <input id="add-name" placeholder="Keep the original" autocomplete="off" spellcheck="false">
+            </label>
+            <label class="field">
+              <span>Connections</span>
+              <select id="add-connections">
+                <option value="1">1</option>
+                <option value="4">4</option>
+                <option value="8">8</option>
+                <option value="16" selected>16</option>
+                <option value="32">32</option>
+              </select>
+            </label>
+          </div>
+          <label class="field">
+            <span>Save to</span>
+            <div class="input-row">
+              <input id="add-folder" autocomplete="off" spellcheck="false">
+              <button type="button" class="ghost" id="add-browse">Browse</button>
+            </div>
+          </label>
+          <div class="grid-2">
+            <label class="field">
+              <span>Start at <em>optional</em></span>
+              <input id="add-start" type="datetime-local">
+              <small class="field-hint">Leave empty to start now.</small>
+            </label>
+            <label class="field">
+              <span>Priority</span>
+              <select id="add-priority">
+                <option value="high">High</option>
+                <option value="normal" selected>Normal</option>
+                <option value="low">Low</option>
+              </select>
+              <small class="field-hint">High-priority items leave the queue first.</small>
+            </label>
+          </div>
+          <label class="field">
+            <span>Speed cap <em>optional</em></span>
+            <select id="add-speed">
+              <option value="0" selected>No cap</option>
+              <option value="1048576">1 MB/s</option>
+              <option value="2097152">2 MB/s</option>
+              <option value="5242880">5 MB/s</option>
+              <option value="10485760">10 MB/s</option>
+              <option value="26214400">25 MB/s</option>
+              <option value="52428800">50 MB/s</option>
+              <option value="104857600">100 MB/s</option>
+            </select>
+            <small class="field-hint">Keeps this download below the cap, even when the global limit is off.</small>
+          </label>
+          <p class="form-note">HLS streams (m3u8) are downloaded as segments and remuxed to MP4 when ffmpeg is available.</p>
+        </div>
+
+        <div class="tab-panel" id="panel-page" data-panel="page" role="tabpanel" aria-labelledby="tab-page" hidden>
+          <label class="field">
+            <span>Page URL</span>
+            <div class="input-row">
+              <input id="scan-url" placeholder="https://site.com/watch/video" autocomplete="off" spellcheck="false">
+              <button type="button" class="ghost" id="scan-btn">
+                <svg class="icon"><use href="#i-scan"/></svg>
+                Scan
+              </button>
+            </div>
+          </label>
+          <div class="scan-status" id="scan-status">The scanner reads the page markup for video, audio, and HLS sources.</div>
+          <div class="scan-results" id="scan-results"></div>
+        </div>
+
+        <div class="tab-panel" id="panel-batch" data-panel="batch" role="tabpanel" aria-labelledby="tab-batch" hidden>
+          <label class="field">
+            <span>Links <em>one per line</em></span>
+            <textarea id="batch-urls" rows="6" placeholder="https://example.com/one.zip&#10;https://example.com/two.mp4" spellcheck="false"></textarea>
+          </label>
+          <div class="grid-2">
+            <label class="field">
+              <span>Connections</span>
+              <select id="batch-connections">
+                <option value="1">1</option>
+                <option value="4">4</option>
+                <option value="8">8</option>
+                <option value="16" selected>16</option>
+                <option value="32">32</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Save to</span>
+              <div class="input-row">
+                <input id="batch-folder" autocomplete="off" spellcheck="false">
+                <button type="button" class="ghost" id="batch-browse">Browse</button>
+              </div>
+            </label>
+          </div>
+          <p class="form-note">Up to 50 unique links per import. Each line becomes its own download.</p>
+          <p class="form-note batch-status" id="batch-status" hidden></p>
+        </div>
+
+        <footer class="modal-foot">
+          <span class="hint">Direct files, HLS, batch links, and browser capture.</span>
+          <div class="foot-actions">
+            <button type="button" class="ghost" data-close>Cancel</button>
+            <button type="submit" class="primary" id="add-submit">Add download</button>
+          </div>
+        </footer>
+      </form>
+    </dialog>
+
+    <dialog class="modal settings-modal" id="settings-dialog" aria-labelledby="settings-title">
+      <form class="modal-card settings-card" id="settings-form" method="dialog">
+        <header class="modal-head settings-head">
+          <div>
+            <h2 id="settings-title">Settings</h2>
+            <p>Downloads, interface, and browser capture.</p>
+          </div>
+          <button type="button" class="icon-btn" data-close aria-label="Close" title="Close"><svg class="icon"><use href="#i-x"/></svg></button>
+        </header>
+
+        <div class="settings-layout">
+          <nav class="settings-rail" role="tablist" aria-orientation="vertical" aria-label="Settings sections">
+            <button type="button" class="settings-tab is-active" role="tab" data-settings-tab="downloads" title="Downloads" aria-selected="true">
+              <svg class="icon"><use href="#i-download"/></svg><span>Downloads</span>
+            </button>
+            <button type="button" class="settings-tab" role="tab" data-settings-tab="behaviour" title="Behaviour" aria-selected="false">
+              <svg class="icon"><use href="#i-layers"/></svg><span>Behaviour</span>
+            </button>
+            <button type="button" class="settings-tab" role="tab" data-settings-tab="appearance" title="Appearance" aria-selected="false">
+              <svg class="icon"><use href="#i-moon"/></svg><span>Appearance</span>
+            </button>
+            <button type="button" class="settings-tab" role="tab" data-settings-tab="capture" title="Capture" aria-selected="false">
+              <svg class="icon"><use href="#i-globe"/></svg><span>Capture</span>
+            </button>
+            <span class="settings-rail-sep" aria-hidden="true"></span>
+            <button type="button" class="settings-tab" role="tab" data-settings-tab="about" title="About" aria-selected="false">
+              <svg class="icon"><use href="#i-info"/></svg><span>About</span>
+            </button>
+            <button type="button" class="settings-tab" role="tab" data-settings-tab="privacy" title="Privacy" aria-selected="false">
+              <svg class="icon"><use href="#i-shield"/></svg><span>Privacy</span>
+            </button>
+          </nav>
+
+          <div class="settings-panels">
+            <section class="settings-panel is-active" data-settings-panel="downloads" role="tabpanel">
+              <div class="settings-panel-head">
+                <h3>Downloads</h3>
+                <p>Where files go and how the engine behaves.</p>
+              </div>
+
+              <label class="field">
+                <span>Default folder</span>
+                <div class="input-row">
+                  <input id="set-folder" autocomplete="off" spellcheck="false">
+                  <button type="button" class="ghost" id="set-browse">Browse</button>
+                </div>
+              </label>
+
+              <div class="grid-2">
+                <label class="field">
+                  <span>Simultaneous downloads</span>
+                  <select id="set-max">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="6">6</option>
+                    <option value="8">8</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>Connections per file</span>
+                  <select id="set-connections">
+                    <option value="1">1</option>
+                    <option value="4">4</option>
+                    <option value="8">8</option>
+                    <option value="16">16</option>
+                    <option value="32">32</option>
+                  </select>
+                </label>
+              </div>
+
+              <div class="grid-2">
+                <label class="field">
+                  <span>Global speed limit</span>
+                  <select id="set-speed">
+                    <option value="0">Unlimited</option>
+                    <option value="524288">500 KB/s</option>
+                    <option value="1048576">1 MB/s</option>
+                    <option value="2097152">2 MB/s</option>
+                    <option value="5242880">5 MB/s</option>
+                    <option value="10485760">10 MB/s</option>
+                    <option value="20971520">20 MB/s</option>
+                  </select>
+                  <small class="field-hint">Shared by every active download. Single files can set a lower cap.</small>
+                </label>
+                <label class="field">
+                  <span>Auto-retry failures</span>
+                  <select id="set-retry">
+                    <option value="0">Never</option>
+                    <option value="1">Once</option>
+                    <option value="2">2 tries</option>
+                    <option value="3">3 tries</option>
+                    <option value="4">4 tries</option>
+                    <option value="5">5 tries</option>
+                  </select>
+                  <small class="field-hint">Backs off after network and server errors.</small>
+                </label>
+              </div>
+
+              <div class="settings-group">
+                <h4>Lifetime</h4>
+                <div class="lifetime-grid">
+                  <div><span>Downloaded</span><strong id="set-lifetime-bytes">n/a</strong></div>
+                  <div><span>Completed</span><strong id="set-lifetime-count">n/a</strong></div>
+                  <div><span>Failures</span><strong id="set-lifetime-failed">n/a</strong></div>
+                  <div><span>Tracking since</span><strong id="set-lifetime-since">n/a</strong></div>
+                </div>
+              </div>
+            </section>
+
+            <section class="settings-panel" data-settings-panel="behaviour" role="tabpanel" hidden>
+              <div class="settings-panel-head">
+                <h3>Behaviour</h3>
+                <p>How Arus reacts to links, finishes, and the window.</p>
+              </div>
+              <div class="settings-group">
+                <h4>Links and alerts</h4>
+                <label class="toggle-row">
+                  <span><strong>Watch clipboard</strong><small>Offer a download when a link is copied.</small></span>
+                  <input type="checkbox" id="set-clipboard">
+                  <i class="switch"></i>
+                </label>
+                <label class="toggle-row">
+                  <span><strong>Completion popup</strong><small>Show a small Windows popup when a download finishes.</small></span>
+                  <input type="checkbox" id="set-notifications">
+                  <i class="switch"></i>
+                </label>
+              </div>
+              <div class="settings-group">
+                <h4>Window and startup</h4>
+                <label class="toggle-row" id="tray-row">
+                  <span><strong>Minimize to tray</strong><small>Closing the window keeps Arus running.</small></span>
+                  <input type="checkbox" id="set-tray">
+                  <i class="switch"></i>
+                </label>
+                <label class="toggle-row" id="launch-row">
+                  <span><strong>Start with Windows</strong><small>Runs hidden in the tray at login and resumes unfinished downloads.</small></span>
+                  <input type="checkbox" id="set-launch">
+                  <i class="switch"></i>
+                </label>
+              </div>
+              <div class="settings-group">
+                <h4>Files</h4>
+                <label class="toggle-row">
+                  <span><strong>Sort into type folders</strong><small>Save video, audio, documents, and archives into separate folders.</small></span>
+                  <input type="checkbox" id="set-organize">
+                  <i class="switch"></i>
+                </label>
+              </div>
+            </section>
+
+            <section class="settings-panel" data-settings-panel="appearance" role="tabpanel" hidden>
+              <div class="settings-panel-head">
+                <h3>Appearance</h3>
+                <p>Quiet by default. Adjust how dense and how still it feels.</p>
+              </div>
+              <div class="settings-group">
+                <h4>Theme</h4>
+                <div class="theme-picker" id="theme-picker">
+                  <button type="button" class="theme-option is-active" data-theme-value="dark">
+                    <svg class="icon"><use href="#i-moon"/></svg>
+                    Dark
+                  </button>
+                  <button type="button" class="theme-option" data-theme-value="light">
+                    <svg class="icon"><use href="#i-sun"/></svg>
+                    Light
+                  </button>
+                </div>
+                <p class="field-hint">Previews instantly. Saved with the rest of your settings.</p>
+              </div>
+              <div class="settings-group">
+                <h4>Row density</h4>
+                <div class="segmented" id="density-picker" role="group" aria-label="Row density">
+                  <button type="button" class="segmented-option is-active" data-density-value="comfortable">Comfortable</button>
+                  <button type="button" class="segmented-option" data-density-value="compact">Compact</button>
+                </div>
+                <p class="field-hint">Compact fits more downloads on screen without hiding details.</p>
+              </div>
+              <div class="settings-group">
+                <label class="toggle-row">
+                  <span><strong>Reduce motion</strong><small>Turn off interface animations and pulsing live indicators.</small></span>
+                  <input type="checkbox" id="set-motion">
+                  <i class="switch"></i>
+                </label>
+              </div>
+            </section>
+
+            <section class="settings-panel" data-settings-panel="capture" role="tabpanel" hidden>
+              <div class="settings-panel-head">
+                <h3>Browser capture</h3>
+                <p>Send media from Chrome or Edge straight to Arus.</p>
+              </div>
+              <div class="status-row">
+                <span class="status-pill" id="ext-status"><i></i><span id="ext-status-copy">Checking extension</span></span>
+                <span class="status-note">Load the bundled folder once; Chrome remembers it.</span>
+              </div>
+              <div class="path-box">
+                <span class="mono" id="ext-path">extension folder</span>
+                <button type="button" class="ghost" id="open-extension">Open folder</button>
+              </div>
+              <ol class="steps">
+                <li>Open <strong>chrome://extensions</strong> and enable Developer mode.</li>
+                <li>Choose <strong>Load unpacked</strong> and select the folder above.</li>
+                <li>Use <strong>Download with Arus</strong> on any video or audio.</li>
+              </ol>
+              <div class="settings-group">
+                <h4>Keyboard shortcuts</h4>
+                <div class="shortcut-list">
+                  <div><span>New download</span><kbd>Ctrl N</kbd></div>
+                  <div><span>Search downloads</span><kbd>Ctrl F</kbd></div>
+                  <div><span>Open settings</span><kbd>Ctrl ,</kbd></div>
+                  <div><span>Grab media under cursor</span><kbd>Alt Shift A</kbd></div>
+                </div>
+                <p class="field-hint">The media shortcut lives in the extension and can be changed at chrome://extensions/shortcuts.</p>
+              </div>
+            </section>
+
+            <section class="settings-panel" data-settings-panel="about" role="tabpanel" hidden>
+              <div class="about-hero">
+                <img class="about-mark" src="/assets/icon-128.png" alt="">
+                <div>
+                  <h3>Arus <span class="about-version" id="about-version">v1.0.0</span></h3>
+                  <p>A quiet download manager for Windows.</p>
+                </div>
+              </div>
+              <p class="section-copy">Arus downloads files, HLS, and DASH streams with a segment engine written in Rust. The engine runs on this PC and listens only on the local loopback address. Nothing is routed through a cloud service.</p>
+              <div class="about-facts">
+                <div><span>Engine</span><strong id="about-engine">Rust · axum</strong></div>
+                <div><span>Version</span><strong id="about-version-row">n/a</strong></div>
+                <div><span>FFmpeg</span><strong id="about-ffmpeg">Checking…</strong></div>
+                <div><span>Platform</span><strong id="about-platform">n/a</strong></div>
+                <div class="wide"><span>Data folder</span><strong class="mono" id="about-data">n/a</strong></div>
+                <div class="wide"><span>Extension folder</span><strong class="mono" id="about-extension">n/a</strong></div>
+              </div>
+              <div class="about-actions">
+                <button type="button" class="ghost" id="about-open-data"><svg class="icon"><use href="#i-folder"/></svg>Open data folder</button>
+                <button type="button" class="ghost" id="about-open-ext"><svg class="icon"><use href="#i-download"/></svg>Open extension</button>
+                <button type="button" class="ghost" id="about-copy"><svg class="icon"><use href="#i-copy"/></svg>Copy diagnostics</button>
+              </div>
+              <p class="settings-fineprint">Built with Tauri, axum, and a small Rust engine. No accounts, no ads, no bundled offers.</p>
+            </section>
+
+            <section class="settings-panel" data-settings-panel="privacy" role="tabpanel" hidden>
+              <div class="settings-panel-head">
+                <h3>Privacy policy</h3>
+                <p>Last updated 8 November 2026.</p>
+              </div>
+              <div class="policy-intro">
+                <span class="status-pill"><i></i>Local only</span>
+                <p>Arus is a desktop utility. Your downloads, history, and preferences stay on this PC.</p>
+              </div>
+              <div class="policy-block">
+                <h4>What Arus stores</h4>
+                <ul>
+                  <li>Download records (name, URL, folder, and progress) in <span class="mono">state.json</span> inside the app data folder.</li>
+                  <li>Preferences such as folder, limits, theme, and density, in the same local file.</li>
+                  <li>Lifetime counters for files, bytes, failures, and the first-run date shown on the dashboard.</li>
+                </ul>
+              </div>
+              <div class="policy-block">
+                <h4>Network access</h4>
+                <ul>
+                  <li>Arus only connects to servers you ask it to download from or scan.</li>
+                  <li>Referer, cookies, and user-agent values are forwarded only to the file host, so authenticated downloads keep working.</li>
+                  <li>The engine listens on 127.0.0.1 and is not reachable from other machines.</li>
+                </ul>
+              </div>
+              <div class="policy-block">
+                <h4>Browser extension</h4>
+                <ul>
+                  <li>The extension reads media URLs on the page you are viewing so it can offer capture.</li>
+                  <li>Captured links and per-site overlay preferences live in Chrome extension storage on this PC.</li>
+                  <li>Arus does not upload browsing data anywhere.</li>
+                </ul>
+              </div>
+              <div class="policy-block">
+                <h4>Clipboard and telemetry</h4>
+                <ul>
+                  <li>Clipboard watching reads links locally and can be turned off under Behaviour.</li>
+                  <li>There is no telemetry, analytics, account system, or cloud sync.</li>
+                </ul>
+              </div>
+              <p class="settings-fineprint">This policy ships with the app and changes when the app changes.</p>
+            </section>
+          </div>
+        </div>
+
+        <footer class="modal-foot settings-foot">
+          <span class="hint" id="settings-hint">Changes apply immediately after saving.</span>
+          <div class="foot-actions">
+            <button type="button" class="ghost" data-close id="settings-cancel">Cancel</button>
+            <button type="submit" class="primary" id="settings-save">Save changes</button>
+          </div>
+        </footer>
+      </form>
+    </dialog>
+
+    <dialog class="modal small" id="confirm-dialog" aria-labelledby="confirm-title" aria-describedby="confirm-text">
+      <div class="modal-card">
+        <header class="modal-head compact">
+          <div>
+            <h2 id="confirm-title">Remove download?</h2>
+            <p id="confirm-text">This removes the entry from Arus.</p>
+          </div>
+        </header>
+        <label class="toggle-row compact" id="confirm-delete-row">
+          <span><strong>Delete the file from disk</strong><small>The downloaded file is removed too.</small></span>
+          <input type="checkbox" id="confirm-delete">
+          <i class="switch"></i>
+        </label>
+        <footer class="modal-foot">
+          <span class="hint">This cannot be undone.</span>
+          <div class="foot-actions">
+            <button type="button" class="ghost" data-close>Cancel</button>
+            <button type="button" class="primary is-danger" id="confirm-ok">Remove</button>
+          </div>
+        </footer>
+      </div>
+    </dialog>
+
+    <div class="toasts" id="toasts" popover="manual"></div>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

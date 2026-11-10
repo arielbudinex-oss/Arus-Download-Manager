@@ -1,0 +1,69 @@
+{
+  "manifest_version": 3,
+  "name": "Arus Capture",
+  "version": "1.3.9",
+  "description": "Send video, audio, subtitles, HLS, and links to Arus, and take over Chrome downloads like a desktop download manager.",
+  "minimum_chrome_version": "116",
+  "permissions": [
+    "webRequest",
+    "storage",
+    "cookies",
+    "contextMenus",
+    "activeTab",
+    "downloads",
+    "scripting",
+    "tabs"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1/*",
+    "http://localhost/*",
+    "<all_urls>"
+  ],
+  "commands": {
+    "grab-media": {
+      "suggested_key": {
+        "default": "Alt+Shift+A"
+      },
+      "description": "Download the video under the cursor"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Arus Capture",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "exclude_matches": [
+        "http://127.0.0.1/*",
+        "http://localhost/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": true
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' http://127.0.0.1:* http://localhost:*; object-src 'none'"
+  }
+}

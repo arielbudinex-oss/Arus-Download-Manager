@@ -1,0 +1,682 @@
+use crate::engine::{AddInput, AppState};
+use crate::model::{public_download, Download};
+use crate::scan::scan_page;
+use axum::body::Bytes;
+use axum::extract::{Path, Request, State};
+use axum::http::{header, HeaderValue, Method, StatusCode};
+use axum::middleware::{self, Next};
+use axum::response::sse::{Event, KeepAlive, Sse};
+use axum::response::{IntoResponse, Response};
+use axum::routing::{get, patch, post};
+use axum::{Json, Router};
+use serde_json::{json, Value};
+use std::collections::HashMap;
+use std::convert::Infallible;
+use std::path::Path as FsPath;
+use std::sync::Arc;
+use std::time::Duration;
+use tokio_stream::wrappers::ReceiverStream;
+
+pub struct ServerInfo {
+    pub url: String,
+    pub port: u16,
+}
+
+pub async fn start(state: Arc<AppState>) -> Result<ServerInfo, String> {
+    state.start_background();
+    let base_port = std::env::var("PORT")
+        .ok()
+        .and_then(|value| value.parse::<u16>().ok())
+        .unwrap_or(4477);
+    let mut last_error = None;
+    for offset in 0..10u16 {
+        let port = base_port.saturating_add(offset);
+        match tokio::net::TcpListener::bind(("127.0.0.1", port)).await {
+            Ok(listener) => {
+                let app = router(state.clone());
+                tokio::spawn(async move {
+                    if let Err(err) = axum::serve(listener, app).await {
+                        eprintln!("[server] {err}");
+                    }
+                });
+                return Ok(ServerInfo {
+                    url: format!("http://127.0.0.1:{port}"),
+                    port,
+                });
+            }
+            Err(err) => {
+                let in_use = err.kind() == std::io::ErrorKind::AddrInUse;
+                last_error = Some(err.to_string());
+                if !in_use {
+                    break;
+                }
+            }
+        }
+    }
+    Err(format!(
+        "No available port: {}",
+        last_error.unwrap_or_default()
+    ))
+}
+
+fn router(state: Arc<AppState>) -> Router {
+    Router::new()
+        .route("/api/state", get(api_state))
+        .route("/api/events", get(api_events))
+        .route("/api/meta", get(api_meta))
+        .route("/api/show", post(api_show))
+        .route("/api/downloads", post(api_add))
+        .route("/api/history/clear", post(api_clear_history))
+        .route("/api/downloads/pause-all", post(api_pause_all))
+        .route("/api/downloads/resume-all", post(api_resume_all))
+        .route("/api/downloads/{id}", get(api_download))
+        .route("/api/downloads/{id}/{action}", post(api_action))
+        .route("/api/settings", patch(api_settings))
+        .route("/api/scan", post(api_scan))
+        .route("/api/capture", post(api_capture))
+        .route("/api/open-extension-folder", post(api_open_extension))
+        .route("/api/open-downloads-folder", post(api_open_downloads))
+        .route("/api/open-data-folder", post(api_open_data))
+        .route("/", get(api_index))
+        .route("/index.html", get(api_index))
+        .route("/app.js", get(api_app))
+        .route("/styles.css", get(api_styles))
+        .route("/theme.css", get(api_theme))
+        .route("/popup.html", get(api_popup))
+        .route("/progress.html", get(api_progress))
+        .route("/assets/{name}", get(api_asset))
+        .route("/favicon.ico", get(api_favicon))
+        .layer(middleware::from_fn_with_state(state.clone(), guard))
+        .with_state(state)
+}
+
+async fn guard(State(_state): State<Arc<AppState>>, req: Request, next: Next) -> Response {
+    let method = req.method().clone();
+    let path = req.uri().path().to_string();
+    let host_header = req
+        .headers()
+        .get(header::HOST)
+        .and_then(|value| value.to_str().ok())
+        .unwrap_or("")
+        .to_string();
+    let host_name = hostname_of_header(&host_header);
+    if !matches!(host_name.as_str(), "127.0.0.1" | "localhost" | "::1") {
+        return forbid("Loopback host required");
+    }
+    let origin = req
+        .headers()
+        .get(header::ORIGIN)
+        .and_then(|value| value.to_str().ok())
+        .map(|value| value.to_string());
+    let mut cors_origin = None;
+    if let Some(origin) = &origin {
+        if !is_allowed_origin(origin, &host_header) {
+            return forbid("Origin is not allowed");
+        }
+        if is_extension_origin(origin) && !extension_may_use(&method, &path) {
+            return forbid("Extension origin cannot use this endpoint");
+        }
+        cors_origin = Some(origin.clone());
+    }
+    if method == Method::OPTIONS && path.starts_with("/api/") {
+        let mut response = StatusCode::NO_CONTENT.into_response();
+        apply_common_headers(&mut response);
+        if let Some(origin) = &cors_origin {
+            apply_cors(&mut response, origin);
+        }
+        return response;
+    }
+    let mut response = next.run(req).await;
+    apply_common_headers(&mut response);
+    if path.starts_with("/api/") {
+        if let Some(origin) = &cors_origin {
+            apply_cors(&mut response, origin);
+        }
+    }
+    response
+}
+
+fn apply_common_headers(response: &mut Response) {
+    response.headers_mut().insert(
+        "x-content-type-options",
+        HeaderValue::from_static("nosniff"),
+    );
+    response
+        .headers_mut()
+        .insert("referrer-policy", HeaderValue::from_static("no-referrer"));
+}
+
+fn apply_cors(response: &mut Response, origin: &str) {
+    if let Ok(value) = HeaderValue::from_str(origin) {
+        response
+            .headers_mut()
+            .insert(header::ACCESS_CONTROL_ALLOW_ORIGIN, value);
+    }
+    response
+        .headers_mut()
+        .insert(header::VARY, HeaderValue::from_static("Origin"));
+    response.headers_mut().insert(
+        header::ACCESS_CONTROL_ALLOW_METHODS,
+        HeaderValue::from_static("GET,POST,PATCH,OPTIONS"),
+    );
+    response.headers_mut().insert(
+        header::ACCESS_CONTROL_ALLOW_HEADERS,
+        HeaderValue::from_static("Content-Type"),
+    );
+    response.headers_mut().insert(
+        header::ACCESS_CONTROL_MAX_AGE,
+        HeaderValue::from_static("86400"),
+    );
+}
+
+fn forbid(message: &str) -> Response {
+    (
+        StatusCode::FORBIDDEN,
+        Json(json!({ "error": message })),
+    )
+        .into_response()
+}
+
+fn json_error(status: StatusCode, message: &str) -> Response {
+    (status, Json(json!({ "error": message }))).into_response()
+}
+
+fn hostname_of_header(value: &str) -> String {
+    let host = value.trim().to_ascii_lowercase();
+    if host.starts_with('[') {
+        if let Some(end) = host.find(']') {
+            return host[1..end].to_string();
+        }
+        return host;
+    }
+    host.split(':').next().unwrap_or("").to_string()
+}
+
+fn is_extension_origin(origin: &str) -> bool {
+    let lower = origin.to_ascii_lowercase();
+    lower.starts_with("chrome-extension://")
+        || lower.starts_with("moz-extension://")
+        || lower.starts_with("safari-web-extension://")
+}
+
+fn is_allowed_origin(origin: &str, host_header: &str) -> bool {
+    let Ok(parsed) = url::Url::parse(origin) else {
+        return false;
+    };
+    match parsed.scheme() {
+        "chrome-extension" | "moz-extension" | "safari-web-extension" => true,
+        _ => parsed
+            .host_str()
+            .map(|host| host.eq_ignore_ascii_case(&hostname_of_header(host_header)))
+            .unwrap_or(false),
+    }
+}
+
+fn extension_may_use(method: &Method, path: &str) -> bool {
+    if method == Method::GET && (path == "/api/meta" || path.starts_with("/api/downloads/")) {
+        return true;
+    }
+    if (method == Method::POST || method == Method::OPTIONS)
+        && (path == "/api/capture" || path == "/api/scan")
+    {
+        return true;
+    }
+    false
+}
+
+async fn api_state(State(state): State<Arc<AppState>>) -> Json<Value> {
+    Json(state.snapshot_value())
+}
+
+async fn api_events(
+    State(state): State<Arc<AppState>>,
+) -> Sse<impl tokio_stream::Stream<Item = Result<Event, Infallible>>> {
+    let (tx, rx) = tokio::sync::mpsc::channel::<Result<Event, Infallible>>(16);
+    let initial = serde_json::to_string(&state.snapshot_value()).unwrap_or_default();
+    let _ = tx.send(Ok(Event::default().event("state").data(initial))).await;
+    let mut subscriber = state.tx.subscribe();
+    tokio::spawn(async move {
+        loop {
+            match subscriber.recv().await {
+                Ok(text) => {
+                    if tx
+                        .send(Ok(Event::default().event("state").data(text)))
+                        .await
+                        .is_err()
+                    {
+                        break;
+                    }
+                }
+                Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => continue,
+                Err(_) => break,
+            }
+        }
+    });
+    Sse::new(ReceiverStream::new(rx))
+        .keep_alive(KeepAlive::new().interval(Duration::from_secs(15)).text("ping"))
+}
+
+async fn api_meta(State(state): State<Arc<AppState>>) -> Json<Value> {
+    let extension_path = state.extension_dir.to_string_lossy().to_string();
+    let extension_exists = state.extension_dir.join("manifest.json").exists();
+    Json(json!({
+        "name": "Arus",
+        "version": state.version,
+        "engine": "Rust",
+        "ffmpeg": state.ffmpeg,
+        "os": std::env::consts::OS,
+        "arch": std::env::consts::ARCH,
+        "dataDir": state.data_dir.to_string_lossy(),
+        "stateFile": state.store_path.to_string_lossy(),
+        "extensionPath": extension_path,
+        "extensionExists": extension_exists,
+    }))
+}
+
+async fn api_show(State(state): State<Arc<AppState>>) -> StatusCode {
+    state.open_window();
+    StatusCode::NO_CONTENT
+}
+
+#[derive(Default)]
+struct CaptureFields {
+    url: Option<String>,
+    filename: Option<String>,
+    kind: Option<String>,
+    page_url: Option<String>,
+    referer: Option<String>,
+    cookie: Option<String>,
+    user_agent: Option<String>,
+    origin: Option<String>,
+    connections: Option<u32>,
+    priority: Option<String>,
+    folder: Option<String>,
+    start_at: Option<Value>,
+    speed_limit: Option<u64>,
+}
+
+fn fields_from_value(body: &Value) -> CaptureFields {
+    let string = |key: &str| body.get(key).and_then(|v| v.as_str()).map(|v| v.to_string());
+    CaptureFields {
+        url: string("url"),
+        filename: string("filename"),
+        kind: string("kind"),
+        page_url: string("pageUrl"),
+        referer: string("referer"),
+        cookie: string("cookie"),
+        user_agent: string("userAgent"),
+        origin: string("origin"),
+        connections: body
+            .get("connections")
+            .and_then(|v| v.as_u64())
+            .map(|v| v as u32),
+        priority: string("priority"),
+        folder: string("folder"),
+        start_at: body.get("startAt").cloned(),
+        speed_limit: body
+            .get("speedLimit")
+            .and_then(|v| v.as_u64())
+            .filter(|v| *v > 0),
+    }
+}
+
+fn start_at_from_value(value: Option<&Value>) -> Result<Option<u64>, String> {
+    match value {
+        None | Some(Value::Null) => Ok(None),
+        Some(Value::String(text)) if text.is_empty() => Ok(None),
+        Some(Value::String(text)) => text
+            .parse::<f64>()
+            .ok()
+            .filter(|v| v.is_finite())
+            .map(|v| Some(v as u64))
+            .ok_or_else(|| "startAt must be an epoch timestamp".to_string()),
+        Some(Value::Number(number)) => number
+            .as_f64()
+            .filter(|v| v.is_finite())
+            .map(|v| Some(v as u64))
+            .ok_or_else(|| "startAt must be an epoch timestamp".to_string()),
+        _ => Err("startAt must be an epoch timestamp".into()),
+    }
+}
+
+async fn api_add(State(state): State<Arc<AppState>>, Json(body): Json<Value>) -> Response {
+    let fields = fields_from_value(&body);
+    let Some(url) = fields.url.filter(|url| !url.trim().is_empty()) else {
+        return json_error(StatusCode::BAD_REQUEST, "url is required");
+    };
+    let start_at = match start_at_from_value(fields.start_at.as_ref()) {
+        Ok(value) => value,
+        Err(message) => return json_error(StatusCode::BAD_REQUEST, &message),
+    };
+    let headers: HashMap<String, String> = body
+        .get("headers")
+        .and_then(|value| value.as_object())
+        .map(|object| {
+            object
+                .iter()
+                .filter_map(|(key, value)| {
+                    value.as_str().map(|value| (key.clone(), value.to_string()))
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+    let input = AddInput {
+        url,
+        filename: fields.filename,
+        kind: fields.kind,
+        page_url: fields.page_url,
+        headers,
+        connections: fields.connections,
+        priority: fields.priority,
+        folder: fields.folder,
+        start_at,
+        speed_limit: fields.speed_limit,
+    };
+    match state.add(input) {
+        Ok(dl) => (StatusCode::CREATED, Json(public_download(&dl))).into_response(),
+        Err(message) => json_error(StatusCode::BAD_REQUEST, &message),
+    }
+}
+
+async fn api_pause_all(State(state): State<Arc<AppState>>) -> Json<Value> {
+    state.pause_all();
+    Json(json!({ "ok": true }))
+}
+
+async fn api_resume_all(State(state): State<Arc<AppState>>) -> Json<Value> {
+    state.resume_all();
+    Json(json!({ "ok": true }))
+}
+
+async fn api_download(State(state): State<Arc<AppState>>, Path(id): Path<String>) -> Response {
+    match state.get_download(&id) {
+        Some(dl) => Json(public_download(&dl)).into_response(),
+        None => json_error(StatusCode::NOT_FOUND, "Download not found"),
+    }
+}
+
+async fn api_clear_history(State(state): State<Arc<AppState>>) -> Response {
+    let removed = state.clear_history();
+    Json(json!({ "ok": true, "removed": removed })).into_response()
+}
+
+async fn api_action(
+    State(state): State<Arc<AppState>>,
+    Path((id, action)): Path<(String, String)>,
+    body: Bytes,
+) -> Response {
+    let payload: Value = if body.is_empty() {
+        json!({})
+    } else {
+        serde_json::from_slice(&body).unwrap_or_else(|_| json!({}))
+    };
+    let dl = match state.get_download(&id) {
+        Some(dl) => dl,
+        None => return json_error(StatusCode::NOT_FOUND, "Download not found"),
+    };
+    match action.as_str() {
+        "pause" => state.pause(&id),
+        "cancel" => state.cancel(&id),
+        "resume" => state.resume(&id),
+        "retry" => state.retry(&id),
+        "start-now" => state.start_now(&id),
+        "priority" => {
+            let priority = payload.get("priority").and_then(|v| v.as_str());
+            state.set_priority(&id, priority);
+        }
+        "speed-limit" => {
+            let limit = payload
+                .get("speedLimit")
+                .and_then(|v| v.as_u64())
+                .unwrap_or(0);
+            state.update_download(&id, |record| record.speed_limit = limit);
+            state.emit(true);
+            state.persist();
+        }
+        "again" => match state.again(&id) {
+            Ok(Some(copy)) => {
+                return (StatusCode::CREATED, Json(public_download(&copy))).into_response()
+            }
+            Ok(None) => return json_error(StatusCode::NOT_FOUND, "Download not found"),
+            Err(message) => return json_error(StatusCode::BAD_REQUEST, &message),
+        },
+        "remove" => {
+            let delete_file = payload
+                .get("deleteFile")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false);
+            state.remove(&id, delete_file);
+        }
+        "open-folder" => {
+            if let Some(path) = dl.save_path.as_deref() {
+                reveal_in_explorer(path);
+            } else if !dl.folder.is_empty() {
+                open_folder(&dl.folder);
+            } else {
+                let folder = state.core.lock().settings.download_dir.clone();
+                open_folder(&folder);
+            }
+        }
+        "open-file" => {
+            let Some(path) = dl.save_path.as_deref() else {
+                return json_error(StatusCode::BAD_REQUEST, "File is not ready");
+            };
+            open_file(path);
+        }
+        "hash" => {
+            if dl.save_path.is_none() {
+                return json_error(StatusCode::BAD_REQUEST, "File is not ready");
+            }
+            return match state.compute_hash(&id).await {
+                Ok(value) => Json(value).into_response(),
+                Err(message) => json_error(StatusCode::INTERNAL_SERVER_ERROR, &message),
+            };
+        }
+        _ => return json_error(StatusCode::NOT_FOUND, "Not found"),
+    }
+    Json(json!({ "ok": true })).into_response()
+}
+
+async fn api_settings(
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<Value>,
+) -> Json<Value> {
+    state.update_settings(&body);
+    let snapshot = state.snapshot_value();
+    Json(snapshot.get("settings").cloned().unwrap_or(Value::Null))
+}
+
+async fn api_scan(State(state): State<Arc<AppState>>, Json(body): Json<Value>) -> Response {
+    let Some(url) = body.get("url").and_then(|v| v.as_str()) else {
+        return json_error(StatusCode::BAD_REQUEST, "url is required");
+    };
+    match scan_page(&state, url).await {
+        Ok(value) => Json(value).into_response(),
+        Err(message) => json_error(StatusCode::INTERNAL_SERVER_ERROR, &message),
+    }
+}
+
+async fn api_capture(State(state): State<Arc<AppState>>, Json(body): Json<Value>) -> Response {
+    let fields = fields_from_value(&body);
+    let Some(url) = fields.url.filter(|url| !url.trim().is_empty()) else {
+        return json_error(StatusCode::BAD_REQUEST, "url is required");
+    };
+    let mut headers = HashMap::new();
+    if let Some(referer) = fields.referer.or(fields.page_url.clone()) {
+        headers.insert("referer".into(), referer);
+    }
+    if let Some(cookie) = fields.cookie {
+        headers.insert("cookie".into(), cookie);
+    }
+    if let Some(user_agent) = fields.user_agent {
+        headers.insert("user-agent".into(), user_agent);
+    }
+    if let Some(origin) = fields.origin {
+        headers.insert("origin".into(), origin);
+    }
+    let input = AddInput {
+        url,
+        filename: fields.filename,
+        kind: fields.kind,
+        page_url: fields.page_url,
+        headers,
+        connections: None,
+        priority: None,
+        folder: None,
+        start_at: None,
+        speed_limit: fields.speed_limit,
+    };
+    match state.add(input) {
+        Ok(dl) => (StatusCode::CREATED, Json(public_download(&dl))).into_response(),
+        Err(message) => json_error(StatusCode::BAD_REQUEST, &message),
+    }
+}
+
+async fn api_open_extension(State(state): State<Arc<AppState>>) -> Response {
+    if !state.extension_dir.join("manifest.json").exists() {
+        return json_error(StatusCode::NOT_FOUND, "Extension folder is missing");
+    }
+    open_folder(&state.extension_dir.to_string_lossy());
+    Json(json!({ "ok": true })).into_response()
+}
+
+async fn api_open_downloads(State(state): State<Arc<AppState>>) -> Response {
+    let folder = state.core.lock().settings.download_dir.clone();
+    let _ = std::fs::create_dir_all(&folder);
+    open_folder(&folder);
+    Json(json!({ "ok": true })).into_response()
+}
+
+async fn api_open_data(State(state): State<Arc<AppState>>) -> Response {
+    let folder = state.data_dir.to_string_lossy().to_string();
+    let _ = std::fs::create_dir_all(&folder);
+    open_folder(&folder);
+    Json(json!({ "ok": true })).into_response()
+}
+
+async fn api_index(State(state): State<Arc<AppState>>) -> Response {
+    serve_ui(&state, "index.html", "text/html; charset=utf-8").await
+}
+
+async fn api_app(State(state): State<Arc<AppState>>) -> Response {
+    serve_ui(&state, "app.js", "text/javascript; charset=utf-8").await
+}
+
+async fn api_styles(State(state): State<Arc<AppState>>) -> Response {
+    serve_ui(&state, "styles.css", "text/css; charset=utf-8").await
+}
+
+async fn api_theme(State(state): State<Arc<AppState>>) -> Response {
+    serve_ui(&state, "theme.css", "text/css; charset=utf-8").await
+}
+
+async fn api_popup(State(state): State<Arc<AppState>>) -> Response {
+    serve_ui(&state, "popup.html", "text/html; charset=utf-8").await
+}
+
+async fn api_progress(State(state): State<Arc<AppState>>) -> Response {
+    serve_ui(&state, "progress.html", "text/html; charset=utf-8").await
+}
+
+async fn serve_ui(state: &AppState, name: &str, content_type: &str) -> Response {
+    let path = state.ui_dir.join(name);
+    match tokio::fs::read(&path).await {
+        Ok(bytes) => (
+            StatusCode::OK,
+            [
+                (header::CONTENT_TYPE, content_type),
+                (header::CACHE_CONTROL, "no-store"),
+            ],
+            bytes,
+        )
+            .into_response(),
+        Err(_) => (StatusCode::NOT_FOUND, "Not found").into_response(),
+    }
+}
+
+async fn api_asset(State(state): State<Arc<AppState>>, Path(name): Path<String>) -> Response {
+    let safe = FsPath::new(&name)
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("");
+    if safe.is_empty() || safe != name {
+        return (StatusCode::NOT_FOUND, "Not found").into_response();
+    }
+    let path = state.assets_dir.join(safe);
+    match tokio::fs::read(&path).await {
+        Ok(bytes) => {
+            let mime = mime_guess::from_path(&path).first_raw().unwrap_or("application/octet-stream");
+            (
+                StatusCode::OK,
+                [
+                    (header::CONTENT_TYPE, mime),
+                    (header::CACHE_CONTROL, "no-store"),
+                ],
+                bytes,
+            )
+                .into_response()
+        }
+        Err(_) => (StatusCode::NOT_FOUND, "Not found").into_response(),
+    }
+}
+
+async fn api_favicon(State(state): State<Arc<AppState>>) -> Response {
+    let path = state.assets_dir.join("icon.ico");
+    match tokio::fs::read(&path).await {
+        Ok(bytes) => (
+            StatusCode::OK,
+            [(header::CONTENT_TYPE, "image/x-icon")],
+            bytes,
+        )
+            .into_response(),
+        Err(_) => (StatusCode::NOT_FOUND, "Not found").into_response(),
+    }
+}
+
+fn open_folder(path: &str) {
+    #[cfg(target_os = "windows")]
+    {
+        let _ = std::process::Command::new("explorer.exe")
+            .arg(path)
+            .spawn();
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        let _ = std::process::Command::new("xdg-open").arg(path).spawn();
+    }
+}
+
+fn reveal_in_explorer(path: &str) {
+    #[cfg(target_os = "windows")]
+    {
+        let _ = std::process::Command::new("explorer.exe")
+            .arg(format!("/select,{path}"))
+            .spawn();
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        let parent = PathBuf::from(path)
+            .parent()
+            .map(|p| p.to_string_lossy().to_string())
+            .unwrap_or_else(|| path.to_string());
+        open_folder(&parent);
+    }
+}
+
+fn open_file(path: &str) {
+    #[cfg(target_os = "windows")]
+    {
+        let _ = std::process::Command::new("cmd.exe")
+            .args(["/c", "start", "", path])
+            .spawn();
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        let _ = std::process::Command::new("xdg-open").arg(path).spawn();
+    }
+}
+
+#[allow(dead_code)]
+fn download_public(dl: &Download) -> Value {
+    public_download(dl)
+}

@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Downloading</title>
+<style>
+  :root {
+    --bg: #1e1e1f;
+    --surface: #2c2c2e;
+    --surface-2: #3a3a3c;
+    --text: #f5f5f7;
+    --muted: #a1a1a6;
+    --faint: #8e8e93;
+    --border: rgba(255, 255, 255, 0.09);
+    --border-strong: rgba(255, 255, 255, 0.16);
+    --accent: #0a84ff;
+    --accent-hover: #3d9bff;
+    --green: #30d158;
+    --red: #ff453a;
+    --track: rgba(120, 120, 128, 0.24);
+    --focus: #0a84ff;
+    --focus-ring: rgba(10, 132, 255, 0.32);
+    color-scheme: dark;
+  }
+
+  [data-theme="light"] {
+    --bg: #f2f2f4;
+    --surface: #ffffff;
+    --surface-2: #e7e7ea;
+    --text: #1d1d1f;
+    --muted: #6e6e73;
+    --faint: #86868b;
+    --border: rgba(0, 0, 0, 0.09);
+    --border-strong: rgba(0, 0, 0, 0.16);
+    --accent: #007aff;
+    --accent-hover: #2b8fff;
+    --green: #28a745;
+    --red: #ff3b30;
+    --track: rgba(120, 120, 128, 0.2);
+    --focus: #007aff;
+    --focus-ring: rgba(0, 122, 255, 0.26);
+    color-scheme: light;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { height: 100%; }
+
+  body {
+    margin: 0;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    font-size: 13px;
+    letter-spacing: -0.006em;
+    user-select: none;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .popup {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 13px 15px 14px;
+    animation: pop-in 160ms cubic-bezier(0.2, 0.9, 0.3, 1);
+  }
+
+  @keyframes pop-in {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .popup { animation: none; }
+    .bar .fill { transition: none; }
+    .bar.is-unknown .fill { animation: none; width: 34%; }
+  }
+
+  .head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 20px;
+  }
+
+  .title {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .title svg {
+    width: 12px;
+    height: 12px;
+    color: var(--accent);
+  }
+
+  .percent {
+    margin-left: auto;
+    font-family: "SF Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+    font-size: 11.5px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+  }
+
+  .close {
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    margin: 0 -3px 0 2px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(120, 120, 128, 0.16);
+    color: var(--faint);
+    cursor: pointer;
+  }
+
+  .close:hover { background: rgba(120, 120, 128, 0.28); color: var(--text); }
+  .close svg { width: 10px; height: 10px; }
+
+  .close:focus-visible,
+  .btn:focus-visible {
+    outline: 3px solid var(--focus-ring);
+    outline-offset: 1px;
+  }
+
+  .name {
+    margin-top: 7px;
+    overflow: hidden;
+    font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", sans-serif;
+    font-size: 13.5px;
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .bar {
+    position: relative;
+    height: 4px;
+    margin-top: 10px;
+    border-radius: 99px;
+    background: var(--track);
+    overflow: hidden;
+  }
+
+  .bar .fill {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--accent);
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform 420ms linear;
+  }
+
+  .bar[data-status="completed"] .fill { background: var(--green); }
+  .bar[data-status="failed"] .fill { background: var(--red); }
+  .bar[data-status="paused"] .fill { background: var(--faint); }
+
+  .bar.is-unknown .fill {
+    width: 34%;
+    transform: none;
+    animation: slide 1.5s ease-in-out infinite;
+  }
+
+  @keyframes slide {
+    0% { left: -34%; }
+    100% { left: 100%; }
+  }
+
+  .foot {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: auto;
+    padding-top: 9px;
+    min-width: 0;
+  }
+
+  .meta {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    font-size: 10.5px;
+    color: var(--faint);
+    font-variant-numeric: tabular-nums;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .meta.is-error { color: var(--red); }
+
+  .actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: none;
+  }
+
+  .btn {
+    height: 24px;
+    padding: 0 11px;
+    border: 0;
+    border-radius: 6px;
+    background: rgba(120, 120, 128, 0.18);
+    color: var(--text);
+    font: inherit;
+    font-size: 11.5px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.12s ease, filter 0.12s ease;
+  }
+
+  .btn:hover {
+    background: rgba(120, 120, 128, 0.28);
+  }
+
+  .btn:active { filter: brightness(0.92); }
+
+  #pause,
+  #retry {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  }
+
+  #pause:hover,
+  #retry:hover {
+    background: var(--accent-hover);
+  }
+
+  .btn[hidden] { display: none; }
+
+</style>
+</head>
+<body>
+  <div class="popup" id="popup" role="status">
+    <div class="head">
+      <span class="title">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M8 3v8m0 0 3.2-3.2M8 11 4.8 7.8"></path>
+          <path d="M3 13h10"></path>
+        </svg>
+        <span id="title-text">Downloading</span>
+      </span>
+      <span class="percent" id="percent">0%</span>
+      <button class="close" id="close" type="button" aria-label="Hide progress">
+        <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+          <path d="M3 3l6 6M9 3 3 9"></path>
+        </svg>
+      </button>
+    </div>
+    <div class="name" id="name">Download</div>
+    <div class="bar" id="bar"><i class="fill" id="fill"></i></div>
+    <div class="foot">
+      <span class="meta" id="meta">Starting</span>
+      <div class="actions">
+        <button class="btn" id="retry" type="button" hidden>Retry</button>
+        <button class="btn" id="pause" type="button">Pause</button>
+        <button class="btn" id="cancel" type="button">Cancel</button>
+      </div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      const params = new URLSearchParams(location.search);
+      const id = params.get('id') || '';
+      const initialName = params.get('name') || '';
+      const titleText = document.getElementById('title-text');
+      const percentEl = document.getElementById('percent');
+      const nameEl = document.getElementById('name');
+      const bar = document.getElementById('bar');
+      const fill = document.getElementById('fill');
+      const meta = document.getElementById('meta');
+      const pauseBtn = document.getElementById('pause');
+      const cancelBtn = document.getElementById('cancel');
+      const retryBtn = document.getElementById('retry');
+
+      document.documentElement.dataset.theme = params.get('theme') === 'light' ? 'light' : 'dark';
+      if (initialName) {
+        nameEl.textContent = initialName;
+        nameEl.title = initialName;
+      }
+
+      function formatBytes(value) {
+        if (!value || value < 0) return '0 B';
+        const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        let size = value;
+        let unit = 0;
+        while (size >= 1024 && unit < units.length - 1) {
+          size /= 1024;
+          unit += 1;
+        }
+        return (unit === 0 ? Math.round(size) : size.toFixed(size >= 100 ? 0 : 1)) + ' ' + units[unit];
+      }
+
+      function formatSpeed(value) {
+        const speed = Number(value) || 0;
+        return speed > 0 ? formatBytes(speed) + '/s' : '0 B/s';
+      }
+
+      function formatEta(value) {
+        const seconds = Math.round(Number(value) || 0);
+        if (seconds <= 0) return '';
+        if (seconds < 60) return seconds + 's left';
+        const minutes = Math.floor(seconds / 60);
+        if (minutes < 60) {
+          const rest = seconds % 60;
+          return minutes + 'm' + (rest ? ' ' + rest + 's' : '') + ' left';
+        }
+        const hours = Math.floor(minutes / 60);
+        return hours + 'h ' + (minutes % 60) + 'm left';
+      }
+
+      function fallbackName(url) {
+        try {
+          const path = new URL(url).pathname.split('/').filter(Boolean).pop() || '';
+          return decodeURIComponent(path) || 'Download';
+        } catch {
+          return 'Download';
+        }
+      }
+
+      function dismiss() {
+        if (typeof window.arusPopupClose === 'function') {
+          window.arusPopupClose();
+          return;
+        }
+        window.close();
+      }
+
+      function act(action, closeAfter) {
+        if (!id) return;
+        fetch('/api/downloads/' + encodeURIComponent(id) + '/' + action, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: '{}'
+        }).catch(function () {
+          dismiss();
+        });
+        if (closeAfter) setTimeout(dismiss, 220);
+      }
+
+      function setBar(value, unknown) {
+        bar.classList.toggle('is-unknown', Boolean(unknown));
+        if (unknown) {
+          percentEl.textContent = '—';
+          return;
+        }
+        const safe = Math.max(0, Math.min(100, value));
+        fill.style.transform = 'scaleX(' + (safe / 100) + ')';
+        percentEl.textContent = Math.round(safe) + '%';
+      }
+
+      function render(dl) {
+        const status = String(dl.status || '');
+        bar.dataset.status = status;
+        const name = dl.filename || initialName || fallbackName(dl.url || '');
+        nameEl.textContent = name;
+        nameEl.title = name;
+
+        const total = Number(dl.size) || 0;
+        const received = Number(dl.received) || 0;
+        const segments = dl.hls || dl.dash;
+        let percent = null;
+        if (total > 0) percent = (received / total) * 100;
+        else if (segments && Number(segments.totalSegments) > 0) {
+          percent = (Number(segments.completedSegments) / Number(segments.totalSegments)) * 100;
+        }
+
+        const active = status === 'downloading' || status === 'queued' || status === 'paused';
+        retryBtn.hidden = status !== 'failed';
+        pauseBtn.hidden = !active;
+        cancelBtn.hidden = !active;
+        meta.classList.toggle('is-error', status === 'failed');
+
+        if (status === 'completed') {
+          setBar(100, false);
+          titleText.textContent = 'Download complete';
+          meta.textContent = formatBytes(total || received) + ' saved';
+          pauseBtn.hidden = true;
+          cancelBtn.hidden = true;
+          return;
+        }
+
+        if (status === 'failed') {
+          setBar(percent == null ? 0 : percent, false);
+          titleText.textContent = 'Download failed';
+          meta.textContent = dl.error ? String(dl.error) : 'The download failed';
+          meta.title = meta.textContent;
+          return;
+        }
+
+        if (status === 'canceled') {
+          dismiss();
+          return;
+        }
+
+        if (status === 'paused') {
+          titleText.textContent = 'Paused';
+          pauseBtn.textContent = 'Resume';
+        } else if (status === 'queued') {
+          titleText.textContent = dl.retryAt ? 'Retrying' : 'Queued';
+          pauseBtn.textContent = 'Pause';
+        } else {
+          titleText.textContent = 'Downloading';
+          pauseBtn.textContent = 'Pause';
+        }
+
+        setBar(percent == null ? 0 : percent, percent == null);
+
+        const parts = [];
+        if (total > 0) parts.push(formatBytes(received) + ' of ' + formatBytes(total));
+        else if (received > 0) parts.push(formatBytes(received));
+        else if (segments && Number(segments.totalSegments) > 0) {
+          parts.push(segments.completedSegments + ' of ' + segments.totalSegments + ' segments');
+        } else {
+          parts.push('Starting');
+        }
+        if (status === 'downloading') {
+          parts.push(formatSpeed(dl.speed));
+          const eta = formatEta(dl.eta);
+          if (eta) parts.push(eta);
+        }
+        meta.textContent = parts.join(' · ');
+        meta.title = meta.textContent;
+      }
+
+      let misses = 0;
+      let busy = false;
+      async function poll() {
+        if (!id || busy) return;
+        busy = true;
+        try {
+          const res = await fetch('/api/downloads/' + encodeURIComponent(id), { cache: 'no-store' });
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          misses = 0;
+          render(await res.json());
+        } catch {
+          misses += 1;
+          if (misses === 1) {
+            meta.textContent = 'Arus is not responding';
+          }
+        } finally {
+          busy = false;
+        }
+      }
+
+      pauseBtn.addEventListener('click', function () {
+        act(pauseBtn.textContent === 'Resume' ? 'resume' : 'pause');
+      });
+      cancelBtn.addEventListener('click', function () { act('cancel', true); });
+      retryBtn.addEventListener('click', function () { act('retry'); });
+      document.getElementById('close').addEventListener('click', dismiss);
+      document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') dismiss();
+      });
+
+      poll();
+      setInterval(poll, 500);
+    })();
+  </script>
+</body>
+</html>

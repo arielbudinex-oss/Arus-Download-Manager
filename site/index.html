@@ -1,0 +1,595 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arus · Download manager Rust untuk Windows</title>
+<meta name="description" content="Arus adalah download manager open source untuk Windows. Membagi file menjadi beberapa koneksi, mendukung HLS/DASH, dan berjalan di atas Tauri dengan WebView2.">
+<meta name="theme-color" content="#090b0e">
+<meta name="color-scheme" content="dark">
+<link rel="canonical" href="https://arielbudinex-oss.github.io/Arus-Download-Manager/">
+<link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="assets/icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Arus">
+<meta property="og:title" content="Arus · Download manager ringan untuk Windows">
+<meta property="og:description" content="Download manager open source dengan engine Rust dan WebView2. Installer 3,5 MB, RAM idle sekitar 19 MB.">
+<meta property="og:url" content="https://arielbudinex-oss.github.io/Arus-Download-Manager/">
+<meta property="og:image" content="https://arielbudinex-oss.github.io/Arus-Download-Manager/assets/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Arus · Download manager ringan untuk Windows">
+<meta name="twitter:description" content="Download manager open source dengan engine Rust dan WebView2. Installer 3,5 MB, RAM idle sekitar 19 MB.">
+<meta name="twitter:image" content="https://arielbudinex-oss.github.io/Arus-Download-Manager/assets/og.png">
+<script>document.documentElement.classList.add('js');</script>
+<link rel="stylesheet" href="styles.css">
+<noscript><style>.reveal{opacity:1!important;transform:none!important}</style></noscript>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Arus",
+  "operatingSystem": "Windows 10, Windows 11",
+  "applicationCategory": "UtilitiesApplication",
+  "description": "Download manager Rust dan Tauri untuk Windows. Multi-koneksi, HLS/DASH, jadwal unduhan, dan verifikasi SHA-256.",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "IDR" },
+  "license": "https://opensource.org/licenses/MIT",
+  "downloadUrl": "https://github.com/arielbudinex-oss/Arus-Download-Manager/releases/latest/download/Arus_1.0.0_x64-setup.exe"
+}
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Langsung ke konten</a>
+<div class="noise" aria-hidden="true"></div>
+
+<header class="nav" id="top">
+  <div class="nav-inner">
+    <a class="brand" href="#top" aria-label="Arus, kembali ke atas">
+      <img src="assets/icon.png" width="26" height="26" alt="">
+      <span>Arus</span>
+    </a>
+    <nav class="nav-links" aria-label="Navigasi utama">
+      <a href="#fitur">Fitur</a>
+      <a href="#ringan">Ringan</a>
+      <a href="#komunitas">Komunitas</a>
+      <a href="#dukungan">Dukungan</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <div class="nav-actions">
+      <a class="icon-btn" href="https://github.com/arielbudinex-oss/Arus-Download-Manager" target="_blank" rel="noopener" aria-label="Arus di GitHub" title="GitHub">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5a9.5 9.5 0 0 0-3 18.52c.48.09.65-.21.65-.46v-1.8c-2.64.57-3.2-1.13-3.2-1.13-.43-1.1-1.05-1.39-1.05-1.39-.86-.59.06-.58.06-.58.95.07 1.45.97 1.45.97.85 1.45 2.22 1.03 2.76.79.09-.61.33-1.03.6-1.27-2.11-.24-4.33-1.05-4.33-4.69 0-1.04.37-1.89.97-2.55-.1-.24-.42-1.21.09-2.51 0 0 .8-.26 2.61.97a9.1 9.1 0 0 1 4.76 0c1.81-1.23 2.61-.97 2.61-.97.51 1.3.19 2.27.09 2.51.6.66.97 1.51.97 2.55 0 3.65-2.23 4.45-4.34 4.68.34.29.64.87.64 1.75v2.6c0 .25.17.56.66.46A9.5 9.5 0 0 0 12 2.5Z"/></svg>
+      </a>
+      <a class="icon-btn" href="https://discord.gg/K84ebNFJV" target="_blank" rel="noopener" aria-label="Komunitas Discord Arus" title="Discord">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.6 8.2c.4-.2.9-.4 1.4-.5l.2-.4c.1-.2.3-.3.6-.4a10.5 10.5 0 0 1 5.1.8c.3.1.4.2.5.4l.2.4c.5.1 1 .3 1.4.5 1.4.6 2.4 2.6 2.9 6.1.03.2-.03.4-.2.5-1 .7-2 1.2-3 1.5-.2.06-.4 0-.5-.2l-.6-1c.8-.2 1.5-.5 2.1-.9-.3.2-.8.4-1.3.5a9.7 9.7 0 0 1-6.1 0c-.5-.1-1-.3-1.3-.5.6.4 1.3.7 2.1.9l-.6 1c-.1.2-.3.26-.5.2-1-.3-2-.8-3-1.5a.6.6 0 0 1-.2-.5c.5-3.5 1.5-5.5 2.9-6.1Zm1.7 4.3c.5 0 .9-.5.9-1.1 0-.6-.4-1.1-.9-1.1-.5 0-.9.5-.9 1.1 0 .6.4 1.1.9 1.1Zm3.4 0c.5 0 .9-.5.9-1.1 0-.6-.4-1.1-.9-1.1-.5 0-.9.5-.9 1.1 0 .6.4 1.1.9 1.1Z"/></svg>
+      </a>
+      <a class="btn btn-sm" href="https://github.com/arielbudinex-oss/Arus-Download-Manager/releases/latest/download/Arus_1.0.0_x64-setup.exe" data-download>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v10.5M7.8 10.3 12 14.5l4.2-4.2M5 19h14"/></svg>
+        Unduh
+      </a>
+      <button class="icon-btn menu-btn" id="menu-btn" type="button" aria-expanded="false" aria-controls="mobile-menu" aria-label="Buka menu">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </div>
+  </div>
+  <nav class="mobile-menu" id="mobile-menu" hidden aria-label="Navigasi seluler">
+    <a href="#fitur">Fitur</a>
+    <a href="#ringan">Kenapa ringan</a>
+    <a href="#komunitas">Komunitas</a>
+    <a href="#dukungan">Dukungan</a>
+    <a href="#faq">FAQ</a>
+  </nav>
+</header>
+
+<main id="main">
+  <section class="hero">
+    <div class="aurora" aria-hidden="true">
+      <span class="aurora-blob aurora-a"></span>
+      <span class="aurora-blob aurora-b"></span>
+      <span class="aurora-blob aurora-c"></span>
+    </div>
+    <div class="grid-bg" aria-hidden="true"></div>
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <p class="eyebrow reveal"><span class="eyebrow-dot"></span>Download manager untuk Windows</p>
+        <h1 class="hero-title">
+          <span class="line reveal">Download manager</span>
+          <span class="line shiny reveal" style="--d:.08s">untuk Windows.</span>
+        </h1>
+        <p class="lede reveal" style="--d:.24s">Arus membagi file menjadi beberapa bagian dan mengunduhnya bersamaan, lalu menulis hasilnya langsung ke disk. UI memakai WebView2 yang sudah ada di Windows, jadi installer sekitar 3,5 MB dan RAM idle sekitar 19 MB.</p>
+        <div class="hero-actions reveal" style="--d:.3s">
+          <a class="btn btn-primary btn-lg magnetic" href="https://github.com/arielbudinex-oss/Arus-Download-Manager/releases/latest/download/Arus_1.0.0_x64-setup.exe" data-download>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v10.5M7.8 10.3 12 14.5l4.2-4.2M5 19h14"/></svg>
+            <span class="btn-label">Unduh untuk Windows</span>
+            <span class="btn-sub">Windows 10/11 · 64-bit · 3,5 MB</span>
+          </a>
+          <a class="btn btn-ghost btn-lg" href="https://github.com/arielbudinex-oss/Arus-Download-Manager" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5a9.5 9.5 0 0 0-3 18.52c.48.09.65-.21.65-.46v-1.8c-2.64.57-3.2-1.13-3.2-1.13-.43-1.1-1.05-1.39-1.05-1.39-.86-.59.06-.58.06-.58.95.07 1.45.97 1.45.97.85 1.45 2.22 1.03 2.76.79.09-.61.33-1.03.6-1.27-2.11-.24-4.33-1.05-4.33-4.69 0-1.04.37-1.89.97-2.55-.1-.24-.42-1.21.09-2.51 0 0 .8-.26 2.61.97a9.1 9.1 0 0 1 4.76 0c1.81-1.23 2.61-.97 2.61-.97.51 1.3.19 2.27.09 2.51.6.66.97 1.51.97 2.55 0 3.65-2.23 4.45-4.34 4.68.34.29.64.87.64 1.75v2.6c0 .25.17.56.66.46A9.5 9.5 0 0 0 12 2.5Z"/></svg>
+            Kode sumber
+          </a>
+        </div>
+        <div class="hero-meta reveal" style="--d:.36s">
+          <span class="meta-live"><span class="pulse" aria-hidden="true"></span><span data-download-count>Menghitung unduhan…</span></span>
+          <span class="meta-sep" aria-hidden="true"></span>
+          <span>Rilis 1.0.0</span>
+          <span class="meta-sep" aria-hidden="true"></span>
+          <span>Lisensi MIT</span>
+        </div>
+      </div>
+
+      <div class="hero-visual reveal" style="--d:.2s">
+        <div class="shot-wrap" data-tilt>
+          <div class="shot-glow" aria-hidden="true"></div>
+          <figure class="shot">
+            <img src="assets/app-main.png" width="1440" height="900" alt="Tampilan Arus: antrean unduhan dengan satu transfer aktif, kartu throughput, dan riwayat unduhan selesai." fetchpriority="high">
+          </figure>
+        </div>
+        <p class="shot-note">Tampilan asli Arus. Data pada gambar adalah contoh.</p>
+      </div>
+    </div>
+
+    <div class="marquee" aria-hidden="true">
+      <div class="marquee-track">
+        <span>Multi-koneksi</span><i></i><span>HLS &amp; DASH</span><i></i><span>Jadwal unduhan</span><i></i><span>Batas kecepatan</span><i></i><span>SHA-256</span><i></i><span>Clipboard watch</span><i></i><span>Ekstensi browser</span><i></i><span>Tanpa telemetri</span><i></i><span>Open source</span><i></i>
+        <span>Multi-koneksi</span><i></i><span>HLS &amp; DASH</span><i></i><span>Jadwal unduhan</span><i></i><span>Batas kecepatan</span><i></i><span>SHA-256</span><i></i><span>Clipboard watch</span><i></i><span>Ekstensi browser</span><i></i><span>Tanpa telemetri</span><i></i><span>Open source</span><i></i>
+      </div>
+    </div>
+  </section>
+
+  <section class="stats wrap" aria-label="Angka Arus">
+    <div class="stat reveal">
+      <span class="stat-value"><span data-count="19">19</span><span class="stat-unit">MB</span></span>
+      <span class="stat-label">RAM saat idle</span>
+    </div>
+    <div class="stat reveal" style="--d:.06s">
+      <span class="stat-value"><span data-count="16">16</span></span>
+      <span class="stat-label">koneksi paralel, bisa diatur sampai 32</span>
+    </div>
+    <div class="stat reveal" style="--d:.12s">
+      <span class="stat-value"><span data-count="0">0</span></span>
+      <span class="stat-label">telemetri yang dikirim</span>
+    </div>
+    <div class="stat reveal" style="--d:.18s">
+      <span class="stat-value stat-value--text">MIT</span>
+      <span class="stat-label">bebas dipakai dan diubah</span>
+    </div>
+  </section>
+
+  <section id="ringan" class="section wrap">
+    <header class="section-head reveal">
+      <p class="eyebrow">Kenapa ringan</p>
+      <h2>Kenapa Arus bisa tetap kecil.</h2>
+      <p class="section-sub">Banyak aplikasi desktop membawa Chromium sendiri agar tampilannya seragam. Arus memakai WebView2 yang sudah terpasang di Windows, jadi tidak perlu browser kedua. Engine Rust menangani koneksi dan penulisan file di belakangnya.</p>
+    </header>
+
+    <div class="light-grid">
+      <div class="light-points">
+        <article class="point reveal">
+          <span class="point-num">01</span>
+          <div>
+            <h3>Memakai WebView2 milik Windows</h3>
+            <p>Electron mengemas Chromium dan Node ke dalam aplikasinya. Arus hanya memakai WebView2 yang sudah ada, sehingga installer dan pemakaian memori jauh lebih kecil.</p>
+          </div>
+        </article>
+        <article class="point reveal" style="--d:.06s">
+          <span class="point-num">02</span>
+          <div>
+            <h3>Engine terpisah di Rust</h3>
+            <p>Koneksi paralel, antrean, dan penulisan file dijalankan oleh proses Rust. UI hanya mengirim perintah dan menampilkan progres.</p>
+          </div>
+        </article>
+        <article class="point reveal" style="--d:.12s">
+          <span class="point-num">03</span>
+          <div>
+            <h3>Menulis langsung ke disk</h3>
+            <p>Data ditulis sambil diunduh, bukan ditampung di RAM. Mengunduh file ISO 5 GB tidak membuat pemakaian memori ikut naik.</p>
+          </div>
+        </article>
+        <article class="point reveal" style="--d:.18s">
+          <span class="point-num">04</span>
+          <div>
+            <h3>Tenang saat tidak dipakai</h3>
+            <p>Saat tidak ada unduhan, Arus hanya menunggu di tray. CPU hampir nol, dan popup hanya muncul untuk unduhan yang sedang berjalan.</p>
+          </div>
+        </article>
+      </div>
+
+      <div class="arch reveal" style="--d:.1s" aria-label="Arsitektur Arus: UI WebView2, engine Rust, dan penulisan langsung ke disk">
+        <div class="arch-node">
+          <span class="arch-kicker">UI</span>
+          <strong>WebView2 bawaan Windows</strong>
+          <span>Antarmuka web ringan</span>
+        </div>
+        <div class="arch-link" aria-hidden="true"><i></i></div>
+        <div class="arch-node arch-node--engine">
+          <span class="arch-kicker">Engine</span>
+          <strong>Rust + axum</strong>
+          <span>Segmen, antrean, HLS/DASH, hash</span>
+        </div>
+        <div class="arch-link" aria-hidden="true"><i></i></div>
+        <div class="arch-node">
+          <span class="arch-kicker">I/O</span>
+          <strong>Streaming ke disk</strong>
+          <span>Ditulis bertahap, RAM tidak membengkak</span>
+        </div>
+        <div class="arch-badge">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 4.5 7.3v9.4L12 20.5l7.5-3.8V7.3L12 3.5Z"/><path d="m4.8 7.4 7.2 3.7 7.2-3.7M12 11.1v9"/></svg>
+          Tidak membawa bundel Chromium
+        </div>
+      </div>
+    </div>
+
+    <div class="compare reveal">
+      <div class="compare-head">
+        <h3>Angka pembanding.</h3>
+        <p>Angka Arus diukur pada rilis 1.0.0 di Windows 11. Angka pembanding adalah kisaran umum aplikasi sejenis, bukan benchmark resmi.</p>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Aspek</th>
+              <th scope="col" class="col-arus">Arus</th>
+              <th scope="col">Aplikasi Electron</th>
+              <th scope="col">Browser</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">Runtime</th>
+              <td class="col-arus" data-label="Arus">Rust + WebView2</td>
+              <td data-label="Electron">Chromium + Node</td>
+              <td data-label="Browser">Chromium</td>
+            </tr>
+            <tr>
+              <th scope="row">RAM idle</th>
+              <td class="col-arus" data-label="Arus">±19 MB</td>
+              <td data-label="Electron">150–300 MB</td>
+              <td data-label="Browser">300 MB ke atas</td>
+            </tr>
+            <tr>
+              <th scope="row">Telemetri</th>
+              <td class="col-arus" data-label="Arus">Tidak ada</td>
+              <td data-label="Electron">Bervariasi</td>
+              <td data-label="Browser">Umumnya ada</td>
+            </tr>
+            <tr>
+              <th scope="row">Multikoneksi</th>
+              <td class="col-arus" data-label="Arus">Ya, 1–32</td>
+              <td data-label="Electron">Umumnya ya</td>
+              <td data-label="Browser">Tidak</td>
+            </tr>
+            <tr>
+              <th scope="row">Jadwal dan prioritas</th>
+              <td class="col-arus" data-label="Arus">Ya</td>
+              <td data-label="Electron">Sebagian</td>
+              <td data-label="Browser">Tidak</td>
+            </tr>
+            <tr>
+              <th scope="row">Verifikasi SHA-256</th>
+              <td class="col-arus" data-label="Arus">Ya</td>
+              <td data-label="Electron">Jarang</td>
+              <td data-label="Browser">Tidak</td>
+            </tr>
+            <tr>
+              <th scope="row">Open source</th>
+              <td class="col-arus" data-label="Arus">MIT</td>
+              <td data-label="Electron">Bervariasi</td>
+              <td data-label="Browser">Sebagian</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="fitur" class="section wrap">
+    <header class="section-head reveal">
+      <p class="eyebrow">Fitur</p>
+      <h2>Yang bisa dilakukan Arus.</h2>
+      <p class="section-sub">Fitur yang paling sering dipakai saat mengunduh file besar, dari pemecahan koneksi sampai pemeriksaan file.</p>
+    </header>
+
+    <div class="bento">
+      <article class="card card--seg reveal">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h6v8H4zM14 8h6v8h-6zM10 12h4"/><path d="M15 4v2M19 4v2M7 18v2M3 18v2"/></svg>
+        </div>
+        <h3>Satu file, banyak koneksi</h3>
+        <p>Kalau server mendukung range request, file dipecah menjadi beberapa bagian dan diunduh bersamaan. Satu koneksi yang lambat tidak menghentikan bagian lain.</p>
+        <div class="seg-visual" aria-hidden="true">
+          <span class="seg seg--done"></span><span class="seg seg--done"></span><span class="seg seg--done"></span><span class="seg seg--active"></span><span class="seg seg--active"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span>
+        </div>
+        <span class="card-tag">1–32 koneksi</span>
+      </article>
+
+      <article class="card card--hls reveal" style="--d:.05s">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5h16M4 12h16M4 17.5h10"/><path d="m16 15 2.5 2.5L16 20"/></svg>
+        </div>
+        <h3>HLS dan DASH</h3>
+        <p>Arus membaca manifest HLS atau DASH, mengunduh segmennya, lalu menggabungkannya dengan ffmpeg yang sudah terpasang.</p>
+        <div class="hls-visual" aria-hidden="true">
+          <span>segmen 001</span><span>segmen 002</span><span>segmen 003</span>
+        </div>
+        <span class="card-tag">ffmpeg terdeteksi otomatis</span>
+      </article>
+
+      <article class="card card--sched reveal">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.2"/><path d="M12 7.5V12l3 1.8"/></svg>
+        </div>
+        <h3>Jadwal dan antrean</h3>
+        <p>Jadwalkan unduhan untuk jam tertentu, batasi jumlah yang berjalan bersamaan, dan atur urutannya.</p>
+        <div class="sched-visual" aria-hidden="true">
+          <div><span>23.00</span><i class="on"></i></div>
+          <div><span>04.00</span><i></i></div>
+          <div><span>07.30</span><i></i></div>
+        </div>
+      </article>
+
+      <article class="card card--speed reveal" style="--d:.05s">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 0 1 16 0"/><path d="M12 12 16 8"/><circle cx="12" cy="12" r="1.2"/></svg>
+        </div>
+        <h3>Batas kecepatan</h3>
+        <p>Batasi kecepatan untuk semua unduhan atau satu per satu. Berguna saat sedang meeting atau ada orang lain yang memakai jaringan.</p>
+        <div class="speed-visual" aria-hidden="true">
+          <span class="speed-track"><i></i></span>
+          <span class="speed-value">8 MB/s</span>
+        </div>
+      </article>
+
+      <article class="card card--hash reveal" style="--d:.1s">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 7.5 20M16.5 4 15 20M4.5 9h16M4 15h16"/></svg>
+        </div>
+        <h3>Verifikasi SHA-256</h3>
+        <p>Setelah unduhan selesai, Arus menghitung SHA-256 file agar bisa kamu cocokkan dengan nilai dari situs sumber.</p>
+        <code class="hash-visual">a3f1…9c2e</code>
+      </article>
+
+      <article class="card card--ext reveal">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2.5"/><path d="M3.5 9h17M7 7h.01M10 7h.01"/><path d="M9 14.5h6"/></svg>
+        </div>
+        <h3>Ekstensi browser dan clipboard</h3>
+        <p>Ekstensi untuk Chrome dan Edge menangkap tautan unduhan. Kalau tidak memasang ekstensi, cukup salin URL dan Arus akan menawarkannya.</p>
+        <div class="ext-visual" aria-hidden="true">
+          <span class="ext-url">https://contoh.id/file/arsip.zip</span>
+          <span class="ext-pill">Tambah ke Arus</span>
+        </div>
+      </article>
+
+      <article class="card card--popup reveal" style="--d:.05s">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="12" rx="2.5"/><path d="m8 10.5 2.2 2.2L16 7.5"/><path d="M8 20h8"/></svg>
+        </div>
+        <h3>Popup progres yang singkat</h3>
+        <p>Popup muncul di pojok saat unduhan berjalan atau selesai, lalu menutup sendiri. Tampilannya bisa diatur lewat pengaturan notifikasi.</p>
+        <div class="popup-visual" aria-hidden="true">
+          <span class="popup-dot"></span>
+          <span class="popup-lines"><i></i><i></i></span>
+          <span class="popup-badge">Selesai</span>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section id="komunitas" class="section wrap">
+    <header class="section-head reveal">
+      <p class="eyebrow">Komunitas</p>
+      <h2>Ikut mengembangkan Arus.</h2>
+      <p class="section-sub">Kode dan diskusi terbuka. Laporkan bug di GitHub, atau mampir ke Discord kalau ingin bertanya.</p>
+    </header>
+
+    <div class="community-grid">
+      <a class="community-card reveal" href="https://github.com/arielbudinex-oss/Arus-Download-Manager" target="_blank" rel="noopener">
+        <span class="community-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5a9.5 9.5 0 0 0-3 18.52c.48.09.65-.21.65-.46v-1.8c-2.64.57-3.2-1.13-3.2-1.13-.43-1.1-1.05-1.39-1.05-1.39-.86-.59.06-.58.06-.58.95.07 1.45.97 1.45.97.85 1.45 2.22 1.03 2.76.79.09-.61.33-1.03.6-1.27-2.11-.24-4.33-1.05-4.33-4.69 0-1.04.37-1.89.97-2.55-.1-.24-.42-1.21.09-2.51 0 0 .8-.26 2.61.97a9.1 9.1 0 0 1 4.76 0c1.81-1.23 2.61-.97 2.61-.97.51 1.3.19 2.27.09 2.51.6.66.97 1.51.97 2.55 0 3.65-2.23 4.45-4.34 4.68.34.29.64.87.64 1.75v2.6c0 .25.17.56.66.46A9.5 9.5 0 0 0 12 2.5Z"/></svg>
+        </span>
+        <div class="community-copy">
+          <h3>GitHub</h3>
+          <p>Kode sumber, rilis, dan issue tracker.</p>
+          <span class="community-stats">
+            <span><strong data-stars>…</strong> bintang</span>
+            <span><strong data-forks>…</strong> fork</span>
+            <span><strong data-download-count>…</strong></span>
+          </span>
+        </div>
+        <span class="community-arrow" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M7 17 17 7M9 7h8v8"/></svg>
+        </span>
+      </a>
+
+      <a class="community-card community-card--discord reveal" style="--d:.06s" href="https://discord.gg/K84ebNFJV" target="_blank" rel="noopener">
+        <span class="community-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.6 8.2c.4-.2.9-.4 1.4-.5l.2-.4c.1-.2.3-.3.6-.4a10.5 10.5 0 0 1 5.1.8c.3.1.4.2.5.4l.2.4c.5.1 1 .3 1.4.5 1.4.6 2.4 2.6 2.9 6.1.03.2-.03.4-.2.5-1 .7-2 1.2-3 1.5-.2.06-.4 0-.5-.2l-.6-1c.8-.2 1.5-.5 2.1-.9-.3.2-.8.4-1.3.5a9.7 9.7 0 0 1-6.1 0c-.5-.1-1-.3-1.3-.5.6.4 1.3.7 2.1.9l-.6 1c-.1.2-.3.26-.5.2-1-.3-2-.8-3-1.5a.6.6 0 0 1-.2-.5c.5-3.5 1.5-5.5 2.9-6.1Zm1.7 4.3c.5 0 .9-.5.9-1.1 0-.6-.4-1.1-.9-1.1-.5 0-.9.5-.9 1.1 0 .6.4 1.1.9 1.1Zm3.4 0c.5 0 .9-.5.9-1.1 0-.6-.4-1.1-.9-1.1-.5 0-.9.5-.9 1.1 0 .6.4 1.1.9 1.1Z"/></svg>
+        </span>
+        <div class="community-copy">
+          <h3>Discord</h3>
+          <p>Tempat bertanya dan berdiskusi soal Arus. Terbuka untuk siapa saja.</p>
+          <span class="community-stats"><span>Komunitas terbuka</span><span>Tanpa syarat</span></span>
+        </div>
+        <span class="community-arrow" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M7 17 17 7M9 7h8v8"/></svg>
+        </span>
+      </a>
+    </div>
+  </section>
+
+  <section id="dukungan" class="section wrap">
+    <div class="support-card reveal">
+      <div class="support-glow" aria-hidden="true"></div>
+      <div class="support-copy">
+        <p class="eyebrow">Dukungan</p>
+        <h2>Arus gratis. Kalau berguna, boleh traktir kopi.</h2>
+        <p>Arus tidak punya iklan, langganan, atau fitur berbayar. Kalau kamu ingin mendukung pengembangan berikutnya, bisa lewat QRIS dengan nominal bebas.</p>
+        <div class="support-actions">
+          <button class="btn btn-primary" type="button" data-open-support>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16v10H8l-4 3V7Z"/><path d="M8 11h8M8 14h5"/></svg>
+            Dukung lewat QRIS
+          </button>
+          <a class="btn btn-ghost" href="https://discord.gg/K84ebNFJV" target="_blank" rel="noopener">Gabung Discord</a>
+        </div>
+        <p class="support-fine">Pembayaran diproses oleh aplikasi bank atau e-wallet kamu. Arus tidak melihat data pembayaran.</p>
+      </div>
+      <div class="support-qr">
+        <button class="qr-tile" type="button" data-open-support aria-label="Buka dukungan QRIS dengan nominal bebas">
+          <span class="qr-tile-frame" id="support-qr-preview"></span>
+          <span class="qr-tile-caption">Contoh Rp 25.000<br><span>Klik untuk ubah nominal</span></span>
+        </button>
+        <span class="qr-brand">QRIS · XINET</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="faq" class="section wrap">
+    <header class="section-head reveal">
+      <p class="eyebrow">FAQ</p>
+      <h2>Pertanyaan yang sering muncul.</h2>
+    </header>
+    <div class="faq-list">
+      <details class="reveal">
+        <summary>Apakah Arus benar-benar gratis?</summary>
+        <p>Ya. Lisensinya MIT, jadi kamu bisa memakai, mengubah, dan membagikannya. Tidak ada iklan atau fitur berbayar. Dukungan QRIS sifatnya opsional.</p>
+      </details>
+      <details class="reveal" style="--d:.04s">
+        <summary>Kenapa YouTube dan situs berproteksi tidak didukung?</summary>
+        <p>Arus tidak mengambil stream dari situs yang memproteksi kontennya. Fitur seperti itu melanggar ketentuan platform, jadi tidak akan ditambahkan. Gunakan Arus untuk file yang memang boleh kamu unduh.</p>
+      </details>
+      <details class="reveal" style="--d:.08s">
+        <summary>Apakah perlu memasang ffmpeg?</summary>
+        <p>Hanya untuk HLS dan DASH. Arus mendeteksi ffmpeg yang sudah terpasang dan memakainya untuk menggabungkan segmen. Unduhan file biasa tidak memerlukan ffmpeg.</p>
+      </details>
+      <details class="reveal" style="--d:.12s">
+        <summary>Data saya dikirim ke mana?</summary>
+        <p>Tidak ke mana-mana. Arus tidak memiliki telemetri. Riwayat unduhan, pengaturan, dan statistik tersimpan lokal di folder data aplikasi di PC-mu.</p>
+      </details>
+      <details class="reveal" style="--d:.16s">
+        <summary>Apakah unduhan bisa dilanjutkan?</summary>
+        <p>Ya, selama server sumber mendukung range request. Arus melanjutkan dari bagian yang belum selesai, bukan mengulang dari awal.</p>
+      </details>
+      <details class="reveal" style="--d:.2s">
+        <summary>Windows versi apa yang didukung?</summary>
+        <p>Windows 10 dan 11 64-bit dengan WebView2. WebView2 umumnya sudah terpasang di Windows modern, dan installer dapat memasangnya jika belum ada.</p>
+      </details>
+      <details class="reveal" style="--d:.24s">
+        <summary>Kenapa ada popup setelah saya menekan unduh?</summary>
+        <p>Itu tawaran dukungan yang muncul setelah unduhan dimulai. Sifatnya opsional. Tutup dengan tombol Selesai atau Esc; unduhan tetap berjalan.</p>
+      </details>
+    </div>
+  </section>
+
+  <section id="unduh" class="section wrap">
+    <div class="final-cta reveal">
+      <p class="eyebrow">Unduh</p>
+      <h2>Coba Arus di Windows.</h2>
+      <p>Installer 3,5 MB untuk Windows 10/11 64-bit. Tidak perlu akun.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary btn-lg magnetic" href="https://github.com/arielbudinex-oss/Arus-Download-Manager/releases/latest/download/Arus_1.0.0_x64-setup.exe" data-download>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v10.5M7.8 10.3 12 14.5l4.2-4.2M5 19h14"/></svg>
+          <span class="btn-label">Unduh Arus 1.0.0</span>
+          <span class="btn-sub">Windows 10/11 · 64-bit · 3,5 MB</span>
+        </a>
+        <a class="btn btn-ghost btn-lg" href="https://discord.gg/K84ebNFJV" target="_blank" rel="noopener">Tanya di Discord</a>
+      </div>
+      <p class="final-meta"><span class="pulse" aria-hidden="true"></span><span data-download-count>…</span> · dirilis 10 November 2026</p>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="wrap footer-grid">
+    <div class="footer-brand">
+      <a class="brand" href="#top" aria-label="Arus">
+        <img src="assets/icon.png" width="24" height="24" alt="">
+        <span>Arus</span>
+      </a>
+      <p>Download manager untuk Windows. Dibuat dengan Rust dan Tauri.</p>
+      <p class="footer-fine">Bukan produk IDM dan tidak berafiliasi dengan Internet Download Manager.</p>
+    </div>
+    <div class="footer-col">
+      <h3>Produk</h3>
+      <a href="#fitur">Fitur</a>
+      <a href="#ringan">Kenapa ringan</a>
+      <a href="#faq">FAQ</a>
+      <a href="https://github.com/arielbudinex-oss/Arus-Download-Manager/releases" target="_blank" rel="noopener">Semua rilis</a>
+    </div>
+    <div class="footer-col">
+      <h3>Komunitas</h3>
+      <a href="https://github.com/arielbudinex-oss/Arus-Download-Manager" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://discord.gg/K84ebNFJV" target="_blank" rel="noopener">Discord</a>
+      <a href="https://github.com/arielbudinex-oss/Arus-Download-Manager/issues" target="_blank" rel="noopener">Laporkan bug</a>
+    </div>
+    <div class="footer-col">
+      <h3>Legal</h3>
+      <a href="https://github.com/arielbudinex-oss/Arus-Download-Manager/blob/main/LICENSE" target="_blank" rel="noopener">Lisensi MIT</a>
+      <a href="https://github.com/arielbudinex-oss/Arus-Download-Manager/blob/main/THIRD_PARTY_NOTICES.md" target="_blank" rel="noopener">Lisensi pihak ketiga</a>
+      <a href="#dukungan">Dukungan QRIS</a>
+    </div>
+  </div>
+  <div class="wrap footer-bottom">
+    <span>© 2026 Arus. Sumber terbuka di bawah lisensi MIT.</span>
+    <span>Gunakan untuk konten yang kamu berhak unduh.</span>
+  </div>
+</footer>
+
+<dialog class="support-dialog" id="support-dialog" aria-labelledby="support-title">
+  <div class="dialog-card">
+    <button class="dialog-close" type="button" data-close-support aria-label="Tutup dialog">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"/></svg>
+    </button>
+    <div class="dialog-head">
+      <span class="dialog-check" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M12 3.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 0 0 0-17Z"/><path d="m8 12.2 2.6 2.6L16.2 9"/></svg>
+      </span>
+      <div>
+        <h3 id="support-title">Unduhan dimulai</h3>
+        <p>Unduhan installer sudah dimulai. Kalau Arus berguna, kamu bisa memberi dukungan lewat QRIS. Nominalnya bebas dan tidak memengaruhi fitur apa pun.</p>
+      </div>
+    </div>
+
+    <div class="dialog-body">
+      <div class="amount-panel">
+        <span class="field-label">Nominal dukungan</span>
+        <div class="presets" role="group" aria-label="Pilih nominal cepat">
+          <button type="button" class="preset" data-amount="10000">Rp 10 rb</button>
+          <button type="button" class="preset" data-amount="25000">Rp 25 rb</button>
+          <button type="button" class="preset" data-amount="50000">Rp 50 rb</button>
+          <button type="button" class="preset" data-amount="100000">Rp 100 rb</button>
+        </div>
+        <label class="amount-input">
+          <span>Rp</span>
+          <input id="support-amount" inputmode="numeric" autocomplete="off" spellcheck="false" value="25.000" aria-label="Nominal dukungan dalam rupiah">
+        </label>
+        <p class="amount-hint" id="amount-hint">Nominal bebas, minimal Rp 1.000.</p>
+      </div>
+
+      <div class="qr-panel">
+        <div class="qr-frame" id="support-qr" aria-live="polite"></div>
+        <p class="qr-amount"><span id="qr-amount-label">Rp 25.000</span></p>
+        <p class="qr-note">Scan dengan aplikasi bank atau e-wallet yang mendukung QRIS.</p>
+        <button class="link-btn" type="button" id="save-qr">Simpan gambar QR</button>
+      </div>
+    </div>
+
+    <div class="dialog-meta">
+      <span>XINET - SOFTWARE</span>
+      <span>NMID ID1026618986677</span>
+      <span>A01</span>
+    </div>
+    <p class="dialog-fine">Nominal yang kamu pilih dimasukkan ke kode QR. Arus tidak menyimpan data pembayaran. Pembayaran diproses oleh penyedia QRIS dan aplikasi bank atau e-wallet kamu.</p>
+    <div class="dialog-actions">
+      <a class="btn btn-ghost" href="https://github.com/arielbudinex-oss/Arus-Download-Manager/releases/latest/download/Arus_1.0.0_x64-setup.exe" data-download-secondary>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v10.5M7.8 10.3 12 14.5l4.2-4.2M5 19h14"/></svg>
+        Unduh ulang installer
+      </a>
+      <button class="btn btn-primary" type="button" data-close-support>Selesai</button>
+    </div>
+  </div>
+</dialog>
+
+<script src="vendor/qrcode.js"></script>
+<script src="qris.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
