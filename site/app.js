@@ -5,9 +5,8 @@
   var siteLang = window.ArusSiteLang;
   var fmt = new Intl.NumberFormat(siteLang ? siteLang.locale : 'id-ID');
   var REPO = 'arielbudinex-oss/Arus-Download-Manager';
-  var CACHE_KEY = 'arus.site.stats.v1';
+  var CACHE_KEY = 'arus.site.stats.v2';
   var CACHE_TTL = 15 * 60 * 1000;
-  var REPO_RELEASE = '1.0.2';
 
   function lang() { return siteLang ? siteLang.current : 'id'; }
   function tr(value) { return siteLang ? siteLang.t(value) : value; }
@@ -15,10 +14,6 @@
   function downloadLabel(count) {
     if (lang() === 'en') return fmt.format(count) + (count === 1 ? ' download' : ' downloads');
     return fmt.format(count) + ' unduhan';
-  }
-
-  function releaseLabel() {
-    return lang() === 'en' ? 'Release ' + REPO_RELEASE : 'Rilis ' + REPO_RELEASE;
   }
 
   function $(selector, root) { return (root || document).querySelector(selector); }
@@ -183,7 +178,14 @@
 
   function renderStats() {
     if (statsFallback) {
-      $$('[data-download-count]').forEach(function (el) { el.textContent = releaseLabel(); });
+      $$('[data-download-count]').forEach(function (el) {
+        var live = el.closest('.meta-live');
+        if (live) {
+          live.hidden = true;
+          return;
+        }
+        el.textContent = '-';
+      });
       $$('[data-download-total]').forEach(function (el) { el.textContent = '—'; });
       $$('[data-stars], [data-forks]').forEach(function (el) { el.textContent = '-'; });
       return;
@@ -191,7 +193,11 @@
     if (!lastStats) return;
     var downloads = Number(lastStats.downloads) || 0;
     var label = downloadLabel(downloads);
-    $$('[data-download-count]').forEach(function (el) { el.textContent = label; });
+    $$('[data-download-count]').forEach(function (el) {
+      el.textContent = label;
+      var live = el.closest('.meta-live');
+      if (live) live.hidden = false;
+    });
     $$('[data-download-total]').forEach(function (el) { el.textContent = fmt.format(downloads); });
     $$('[data-stars]').forEach(function (el) { el.textContent = fmt.format(Number(lastStats.stars) || 0); });
     $$('[data-forks]').forEach(function (el) { el.textContent = fmt.format(Number(lastStats.forks) || 0); });
@@ -208,43 +214,65 @@
     renderStats();
   }
 
+  function fetchJson(url, ms) {
+    var controller = 'AbortController' in window ? new AbortController() : null;
+    var timer = controller ? window.setTimeout(function () { controller.abort(); }, ms) : null;
+    var options = { headers: { Accept: 'application/json' } };
+    if (controller) options.signal = controller.signal;
+    return fetch(url, options).then(function (response) {
+      if (!response.ok) throw new Error('HTTP ' + response.status);
+      return response.json();
+    }).finally(function () {
+      if (timer) window.clearTimeout(timer);
+    });
+  }
+
+  function loadStatsFromGitHub() {
+    fetchJson('https://api.github.com/repos/' + REPO + '/releases?per_page=100', 9000)
+      .then(function (releases) {
+        return fetchJson('https://api.github.com/repos/' + REPO, 9000)
+          .then(function (repo) { return [releases, repo]; });
+      })
+      .then(function (payload) {
+        var releases = payload[0];
+        var repo = payload[1];
+        var downloads = 0;
+        (Array.isArray(releases) ? releases : []).forEach(function (release) {
+          (release.assets || []).forEach(function (asset) {
+            downloads += Number(asset.download_count) || 0;
+          });
+        });
+        var data = {
+          downloads: downloads,
+          stars: Number(repo.stargazers_count) || 0,
+          forks: Number(repo.forks_count) || 0
+        };
+        applyStats(data);
+        writeCache(data);
+      })
+      .catch(function () {
+        showStatsFallback();
+      });
+  }
+
   function loadStats() {
     var cached = readCache();
     if (cached) {
       applyStats(cached);
       return;
     }
-    var controller = 'AbortController' in window ? new AbortController() : null;
-    var timer = controller ? window.setTimeout(function () { controller.abort(); }, 9000) : null;
-    var options = { headers: { Accept: 'application/vnd.github+json' } };
-    if (controller) options.signal = controller.signal;
-    Promise.all([
-      fetch('https://api.github.com/repos/' + REPO + '/releases?per_page=100', options),
-      fetch('https://api.github.com/repos/' + REPO, options)
-    ]).then(function (responses) {
-      if (!responses[0].ok || !responses[1].ok) throw new Error('GitHub API');
-      return Promise.all([responses[0].json(), responses[1].json()]);
-    }).then(function (payload) {
-      var releases = payload[0];
-      var repo = payload[1];
-      var downloads = 0;
-      (Array.isArray(releases) ? releases : []).forEach(function (release) {
-        (release.assets || []).forEach(function (asset) {
-          downloads += Number(asset.download_count) || 0;
-        });
-      });
-      var data = {
-        downloads: downloads,
-        stars: Number(repo.stargazers_count) || 0,
-        forks: Number(repo.forks_count) || 0
-      };
-      applyStats(data);
-      writeCache(data);
-    }).catch(function () {
-      showStatsFallback();
-    }).finally(function () {
-      if (timer) window.clearTimeout(timer);
-    });
+    fetchJson('/api/stats', 7000)
+      .then(function (data) {
+        if (!data || typeof data.downloads !== 'number') throw new Error('stats');
+        var fresh = {
+          downloads: data.downloads,
+          stars: Number(data.stars) || 0,
+          forks: Number(data.forks) || 0
+        };
+        applyStats(fresh);
+        writeCache(fresh);
+      })
+      .catch(loadStatsFromGitHub);
   }
   loadStats();
 
