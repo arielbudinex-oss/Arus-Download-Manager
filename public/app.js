@@ -941,7 +941,7 @@
 
   function populateAbout() {
     const meta = state.meta;
-    const version = meta?.version || '1.0.2';
+    const version = meta?.version || '1.0.3';
     if (els.aboutVersion) els.aboutVersion.textContent = `v${version}`;
     if (els.aboutVersionRow) els.aboutVersionRow.textContent = version;
     if (els.aboutEngine) els.aboutEngine.textContent = meta?.engine ? `${meta.engine} · axum` : 'Rust · axum';
@@ -1128,7 +1128,7 @@
   function renderUpdateCard() {
     if (!els.updateTitle || !els.updateNote) return;
     const info = state.update;
-    const current = state.meta?.version || '1.0.2';
+    const current = state.meta?.version || '1.0.3';
     if (els.updateDownload) els.updateDownload.hidden = true;
     if (els.updateCheck) {
       els.updateCheck.hidden = false;

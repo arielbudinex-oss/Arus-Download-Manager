@@ -415,14 +415,17 @@ async fn api_open_extension_browser(State(state): State<Arc<AppState>>) -> Respo
             "Chrome, Edge, Brave, or Vivaldi was not found",
         );
     };
-    match std::process::Command::new(&browser.exe)
-        .arg(browser.page)
-        .spawn()
-    {
+    let profile = last_used_profile(&browser.user_data);
+    let mut command = std::process::Command::new(&browser.exe);
+    if let Some(profile) = &profile {
+        command.arg(format!("--profile-directory={profile}"));
+    }
+    match command.arg(browser.page).spawn() {
         Ok(_) => Json(json!({
             "ok": true,
             "browser": browser.name,
             "page": browser.page,
+            "profile": profile,
             "extensionPath": state.extension_dir.to_string_lossy(),
         }))
         .into_response(),
@@ -437,6 +440,17 @@ struct BrowserLaunch {
     name: &'static str,
     exe: PathBuf,
     page: &'static str,
+    user_data: Option<PathBuf>,
+}
+
+fn last_used_profile(user_data: &Option<PathBuf>) -> Option<String> {
+    let raw = std::fs::read_to_string(user_data.as_ref()?.join("Local State")).ok()?;
+    let value: Value = serde_json::from_str(&raw).ok()?;
+    let name = value.get("profile")?.get("last_used")?.as_str()?.trim();
+    if name.is_empty() {
+        return None;
+    }
+    Some(name.to_string())
 }
 
 fn default_browser_prog_id() -> String {
@@ -465,6 +479,7 @@ fn find_browser() -> Option<BrowserLaunch> {
     let program_files = std::env::var_os("ProgramFiles").map(PathBuf::from);
     let program_files_x86 = std::env::var_os("ProgramFiles(x86)").map(PathBuf::from);
     let local_app_data = std::env::var_os("LOCALAPPDATA").map(PathBuf::from);
+    let local_data = local_app_data.clone();
     let roots = [
         program_files,
         program_files_x86,
@@ -493,11 +508,34 @@ fn find_browser() -> Option<BrowserLaunch> {
         ));
         vivaldi_paths.push(join(root, &["Vivaldi", "Application", "vivaldi.exe"]));
     }
-    let mut browsers: Vec<(&'static str, Vec<PathBuf>, &'static str)> = vec![
-        ("Chrome", chrome_paths, "chrome://extensions"),
-        ("Edge", edge_paths, "edge://extensions"),
-        ("Brave", brave_paths, "chrome://extensions"),
-        ("Vivaldi", vivaldi_paths, "chrome://extensions"),
+    let user_data = |parts: &[&str]| -> Option<PathBuf> {
+        local_data.as_ref().map(|base| join(base, parts))
+    };
+    let mut browsers: Vec<(&'static str, Vec<PathBuf>, &'static str, Option<PathBuf>)> = vec![
+        (
+            "Chrome",
+            chrome_paths,
+            "chrome://extensions",
+            user_data(&["Google", "Chrome", "User Data"]),
+        ),
+        (
+            "Edge",
+            edge_paths,
+            "edge://extensions",
+            user_data(&["Microsoft", "Edge", "User Data"]),
+        ),
+        (
+            "Brave",
+            brave_paths,
+            "chrome://extensions",
+            user_data(&["BraveSoftware", "Brave-Browser", "User Data"]),
+        ),
+        (
+            "Vivaldi",
+            vivaldi_paths,
+            "chrome://extensions",
+            user_data(&["Vivaldi", "User Data"]),
+        ),
     ];
     let preferred = if prog_id.contains("chrome") {
         Some(0)
@@ -516,11 +554,16 @@ fn find_browser() -> Option<BrowserLaunch> {
     }
     browsers
         .into_iter()
-        .find_map(|(name, paths, page)| {
+        .find_map(|(name, paths, page, user_data)| {
             paths
                 .into_iter()
                 .find(|path| path.exists())
-                .map(|exe| BrowserLaunch { name, exe, page })
+                .map(|exe| BrowserLaunch {
+                    name,
+                    exe,
+                    page,
+                    user_data,
+                })
         })
 }
 
