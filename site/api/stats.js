@@ -1,6 +1,6 @@
 const REPO = 'arielbudinex-oss/Arus-Download-Manager';
-const CACHE = 'public, s-maxage=600, stale-while-revalidate=3600';
-const MEMORY_TTL = 5 * 60 * 1000;
+const CACHE = 'public, s-maxage=60, stale-while-revalidate=600';
+const MEMORY_TTL = 60 * 1000;
 
 let memory = { at: 0, data: null };
 

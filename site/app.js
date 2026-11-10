@@ -5,8 +5,9 @@
   var siteLang = window.ArusSiteLang;
   var fmt = new Intl.NumberFormat(siteLang ? siteLang.locale : 'id-ID');
   var REPO = 'arielbudinex-oss/Arus-Download-Manager';
-  var CACHE_KEY = 'arus.site.stats.v2';
-  var CACHE_TTL = 15 * 60 * 1000;
+  var CACHE_KEY = 'arus.site.stats.v3';
+  var CACHE_TTL = 5 * 60 * 1000;
+  var STATS_REFRESH_MS = 60 * 1000;
 
   function tr(value) { return siteLang ? siteLang.t(value) : value; }
 
@@ -235,12 +236,11 @@
       });
   }
 
-  function loadStats() {
-    var cached = readCache();
-    if (cached) {
-      applyStats(cached);
-      return;
-    }
+  var lastStatsFetch = 0;
+
+  function refreshStats() {
+    if (Date.now() - lastStatsFetch < STATS_REFRESH_MS / 2) return;
+    lastStatsFetch = Date.now();
     fetchJson('/api/stats', 7000)
       .then(function (data) {
         if (!data || typeof data.downloads !== 'number') throw new Error('stats');
@@ -254,7 +254,19 @@
       })
       .catch(loadStatsFromGitHub);
   }
+
+  function loadStats() {
+    var cached = readCache();
+    if (cached) applyStats(cached);
+    refreshStats();
+  }
   loadStats();
+  window.setInterval(function () {
+    if (document.visibilityState === 'visible') refreshStats();
+  }, STATS_REFRESH_MS);
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible') refreshStats();
+  });
 
   /* --------------------------------------------------------------- QRIS */
 
