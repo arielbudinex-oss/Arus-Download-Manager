@@ -8,13 +8,7 @@
   var CACHE_KEY = 'arus.site.stats.v2';
   var CACHE_TTL = 15 * 60 * 1000;
 
-  function lang() { return siteLang ? siteLang.current : 'id'; }
   function tr(value) { return siteLang ? siteLang.t(value) : value; }
-
-  function downloadLabel(count) {
-    if (lang() === 'en') return fmt.format(count) + (count === 1 ? ' download' : ' downloads');
-    return fmt.format(count) + ' unduhan';
-  }
 
   function $(selector, root) { return (root || document).querySelector(selector); }
   function $$(selector, root) { return Array.prototype.slice.call((root || document).querySelectorAll(selector)); }
@@ -178,50 +172,12 @@
 
   function renderStats() {
     if (statsFallback) {
-      $$('[data-download-count]').forEach(function (el) {
-        var live = el.closest('.meta-live');
-        if (live) {
-          live.hidden = true;
-          var sep = live.nextElementSibling;
-          if (sep && sep.classList.contains('meta-sep')) sep.hidden = true;
-          return;
-        }
-        var finalMeta = el.closest('.final-meta');
-        if (finalMeta) {
-          el.hidden = true;
-          var pulse = el.previousElementSibling;
-          if (pulse && pulse.classList.contains('pulse')) pulse.hidden = true;
-          return;
-        }
-        if (el.closest('.community-stats')) {
-          el.parentElement.hidden = true;
-          return;
-        }
-        el.textContent = '-';
-      });
       $$('[data-download-total]').forEach(function (el) { el.textContent = '—'; });
       $$('[data-stars], [data-forks]').forEach(function (el) { el.textContent = '-'; });
       return;
     }
     if (!lastStats) return;
     var downloads = Number(lastStats.downloads) || 0;
-    var label = downloadLabel(downloads);
-    $$('[data-download-count]').forEach(function (el) {
-      el.hidden = false;
-      el.textContent = label;
-      var live = el.closest('.meta-live');
-      if (live) {
-        live.hidden = false;
-        var sep = live.nextElementSibling;
-        if (sep && sep.classList.contains('meta-sep')) sep.hidden = false;
-      }
-      var finalMeta = el.closest('.final-meta');
-      if (finalMeta) {
-        var pulse = el.previousElementSibling;
-        if (pulse && pulse.classList.contains('pulse')) pulse.hidden = false;
-      }
-      if (el.closest('.community-stats')) el.parentElement.hidden = false;
-    });
     $$('[data-download-total]').forEach(function (el) { el.textContent = fmt.format(downloads); });
     $$('[data-stars]').forEach(function (el) { el.textContent = fmt.format(Number(lastStats.stars) || 0); });
     $$('[data-forks]').forEach(function (el) { el.textContent = fmt.format(Number(lastStats.forks) || 0); });

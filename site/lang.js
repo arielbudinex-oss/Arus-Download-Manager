@@ -37,6 +37,7 @@
   "Data ditulis sambil diunduh, bukan ditampung di RAM. Mengunduh file ISO 5 GB tidak membuat pemakaian memori ikut naik.": "Data is written as it downloads instead of being buffered in RAM. Downloading a 5 GB ISO does not make memory use climb with it.",
   "Data saya dikirim ke mana?": "Where is my data sent?",
   "Ditulis bertahap, RAM tidak membengkak": "Written in stages, RAM stays flat",
+  "Dirilis 10 November 2026": "Released November 10, 2026",
   "Download manager untuk Windows. Dibuat dengan Rust dan Tauri.": "A download manager for Windows. Built with Rust and Tauri.",
   "Dukungan": "Support",
   "Dukungan QRIS": "QRIS support",
