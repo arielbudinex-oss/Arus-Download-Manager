@@ -75,19 +75,15 @@ cargo run
 
 ## Situs dan laporan bug
 
-Folder `site/` berisi situs promosi sekaligus endpoint laporan. Project Vercel memakai Root Directory `site`, jadi deploy dijalankan dari akar repo. File `.vercelignore` menjaga agar hanya folder situs yang diunggah:
-
-```powershell
-vercel deploy --prod
-```
+Situs promosi ada di https://arus.xinet.id. Folder `site/` di repo ini berisi sumber situs sekaligus endpoint laporan.
 
 Endpoint yang dipakai:
 
 - `POST /api/report` menerima laporan dari aplikasi. Isinya deskripsi, kontak opsional, versi aplikasi, ringkasan diagnostik, dan log terakhir. Laporan disimpan sebagai blob privat.
-- `GET /api/reports` hanya untuk pemilik, memakai header `x-reports-key` yang dicocokkan dengan env `REPORTS_KEY`.
+- `GET /api/reports` hanya untuk pemilik, memakai header `x-reports-key`.
 - Halaman `/admin` adalah dasbor laporan. Kunci dimasukkan saat membuka halaman dan tidak ikut disimpan ke server.
 
-Penyimpanan memakai Vercel Blob lewat env `BLOB_READ_WRITE_TOKEN`. Tidak ada laporan yang dikirim tanpa tindakan pengguna.
+Tidak ada laporan yang dikirim tanpa tindakan pengguna.
 
 ## Batasan
 

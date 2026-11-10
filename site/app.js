@@ -2,10 +2,24 @@
   'use strict';
 
   var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var fmt = new Intl.NumberFormat('id-ID');
+  var siteLang = window.ArusSiteLang;
+  var fmt = new Intl.NumberFormat(siteLang ? siteLang.locale : 'id-ID');
   var REPO = 'arielbudinex-oss/Arus-Download-Manager';
   var CACHE_KEY = 'arus.site.stats.v1';
   var CACHE_TTL = 15 * 60 * 1000;
+  var REPO_RELEASE = '1.0.2';
+
+  function lang() { return siteLang ? siteLang.current : 'id'; }
+  function tr(value) { return siteLang ? siteLang.t(value) : value; }
+
+  function downloadLabel(count) {
+    if (lang() === 'en') return fmt.format(count) + (count === 1 ? ' download' : ' downloads');
+    return fmt.format(count) + ' unduhan';
+  }
+
+  function releaseLabel() {
+    return lang() === 'en' ? 'Release ' + REPO_RELEASE : 'Rilis ' + REPO_RELEASE;
+  }
 
   function $(selector, root) { return (root || document).querySelector(selector); }
   function $$(selector, root) { return Array.prototype.slice.call((root || document).querySelectorAll(selector)); }
@@ -164,21 +178,34 @@
     }
   }
 
-  function applyStats(data) {
-    var downloads = Number(data.downloads) || 0;
-    var label = fmt.format(downloads) + ' unduhan';
+  var lastStats = null;
+  var statsFallback = false;
+
+  function renderStats() {
+    if (statsFallback) {
+      $$('[data-download-count]').forEach(function (el) { el.textContent = releaseLabel(); });
+      $$('[data-download-total]').forEach(function (el) { el.textContent = '—'; });
+      $$('[data-stars], [data-forks]').forEach(function (el) { el.textContent = '-'; });
+      return;
+    }
+    if (!lastStats) return;
+    var downloads = Number(lastStats.downloads) || 0;
+    var label = downloadLabel(downloads);
     $$('[data-download-count]').forEach(function (el) { el.textContent = label; });
-    $$('[data-stars]').forEach(function (el) { el.textContent = fmt.format(Number(data.stars) || 0); });
-    $$('[data-forks]').forEach(function (el) { el.textContent = fmt.format(Number(data.forks) || 0); });
+    $$('[data-download-total]').forEach(function (el) { el.textContent = fmt.format(downloads); });
+    $$('[data-stars]').forEach(function (el) { el.textContent = fmt.format(Number(lastStats.stars) || 0); });
+    $$('[data-forks]').forEach(function (el) { el.textContent = fmt.format(Number(lastStats.forks) || 0); });
+  }
+
+  function applyStats(data) {
+    lastStats = data;
+    statsFallback = false;
+    renderStats();
   }
 
   function showStatsFallback() {
-    $$('[data-download-count]').forEach(function (el) {
-      if (el.textContent.indexOf('…') !== -1) el.textContent = 'Rilis 1.0.1';
-    });
-    $$('[data-stars], [data-forks]').forEach(function (el) {
-      if (el.textContent === '…') el.textContent = '-';
-    });
+    statsFallback = true;
+    renderStats();
   }
 
   function loadStats() {
@@ -236,7 +263,7 @@
     try {
       window.ArusQris.render(qrHost, amount);
     } catch (error) {
-      if (qrHost) qrHost.textContent = 'QR tidak tersedia';
+      if (qrHost) qrHost.textContent = tr('QR tidak tersedia');
     }
   }
 
@@ -255,16 +282,16 @@
     markPresets(amount);
     if (!amountHint || !window.ArusQris) return;
     if (amount < window.ArusQris.min) {
-      amountHint.textContent = 'Minimal Rp 1.000.';
+      amountHint.textContent = tr('Minimal Rp 1.000.');
       amountHint.classList.add('is-error');
       return;
     }
     if (amount > window.ArusQris.max) {
-      amountHint.textContent = 'Maksimal Rp 50.000.000.';
+      amountHint.textContent = tr('Maksimal Rp 50.000.000.');
       amountHint.classList.add('is-error');
       return;
     }
-    amountHint.textContent = 'Nominal bebas, minimal Rp 1.000.';
+    amountHint.textContent = tr('Nominal bebas, minimal Rp 1.000.');
     amountHint.classList.remove('is-error');
     supportState.lastValid = amount;
     if (qrLabel) qrLabel.textContent = 'Rp ' + fmt.format(amount);
@@ -289,7 +316,7 @@
         amountInput.value = fmt.format(digits);
       } else {
         amountInput.value = '';
-        amountHint.textContent = 'Minimal Rp 1.000.';
+        amountHint.textContent = tr('Minimal Rp 1.000.');
         amountHint.classList.add('is-error');
         markPresets(0);
       }
@@ -300,16 +327,35 @@
       amountInput.value = fmt.format(supportState.lastValid);
     });
 
-    function openSupport(trigger) {
-      lastTrigger = trigger || document.activeElement;
-      if (dialog.open) return;
-      setAmount(supportState.lastValid);
-      dialog.showModal();
-      document.documentElement.classList.add('dialog-open');
+    function showStep(step) {
+      var value = step === 'qris' ? 'qris' : 'thanks';
+      $$('[data-support-step]').forEach(function (el) {
+        el.hidden = el.getAttribute('data-support-step') !== value;
+      });
+      if (value === 'qris') setAmount(supportState.lastValid);
+    }
+
+    function focusAmount() {
       window.setTimeout(function () {
         amountInput.focus({ preventScroll: true });
         amountInput.select();
       }, 50);
+    }
+
+    function openSupport(trigger, step) {
+      lastTrigger = trigger || document.activeElement;
+      if (dialog.open) return;
+      showStep(step);
+      dialog.showModal();
+      document.documentElement.classList.add('dialog-open');
+      if (step === 'qris') {
+        focusAmount();
+      } else {
+        window.setTimeout(function () {
+          var next = dialog.querySelector('[data-support-next]');
+          if (next) next.focus({ preventScroll: true });
+        }, 50);
+      }
     }
 
     function closeSupport() {
@@ -317,7 +363,22 @@
     }
 
     $$('[data-open-support]').forEach(function (button) {
-      button.addEventListener('click', function () { openSupport(button); });
+      button.addEventListener('click', function () { openSupport(button, 'qris'); });
+    });
+    $$('[data-support-next]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        showStep('qris');
+        focusAmount();
+      });
+    });
+    $$('[data-support-back]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        showStep('thanks');
+        window.setTimeout(function () {
+          var next = dialog.querySelector('[data-support-next]');
+          if (next) next.focus({ preventScroll: true });
+        }, 50);
+      });
     });
     $$('[data-close-support]').forEach(function (button) {
       button.addEventListener('click', closeSupport);
@@ -335,7 +396,7 @@
     /* Popup dukungan muncul setelah tautan unduhan diklik. */
     $$('[data-download]').forEach(function (link) {
       link.addEventListener('click', function () {
-        window.setTimeout(function () { openSupport(link); }, 700);
+        window.setTimeout(function () { openSupport(link, 'thanks'); }, 700);
       });
     });
 
@@ -381,4 +442,11 @@
     anchor.remove();
     window.setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
   }
+
+  document.addEventListener('arus:languagechange', function () {
+    fmt = new Intl.NumberFormat(siteLang ? siteLang.locale : 'id-ID');
+    renderStats();
+    if (amountInput) amountInput.value = fmt.format(supportState.lastValid);
+    if (dialog && dialog.open) setAmount(supportState.lastValid);
+  });
 })();

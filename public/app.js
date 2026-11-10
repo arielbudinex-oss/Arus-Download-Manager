@@ -626,6 +626,14 @@
     return `${minutes}:${String(secs).padStart(2, '0')}`;
   }
 
+  function uiLocale() {
+    return window.ArusLang ? window.ArusLang.locale : undefined;
+  }
+
+  function tt(value) {
+    return window.ArusLang ? window.ArusLang.t(value) : value;
+  }
+
   function timeAgo(timestamp) {
     if (!timestamp) return 'n/a';
     const seconds = Math.max(0, Math.round((Date.now() - timestamp) / 1000));
@@ -633,7 +641,7 @@
     if (seconds < 60) return `${seconds}s ago`;
     if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
     if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-    return new Date(timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    return new Date(timestamp).toLocaleDateString(uiLocale(), { month: 'short', day: 'numeric' });
   }
 
   function isScheduled(dl) {
@@ -644,12 +652,12 @@
     const date = new Date(timestamp);
     if (!Number.isFinite(date.getTime())) return 'n/a';
     const now = new Date();
-    const time = date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+    const time = date.toLocaleTimeString(uiLocale(), { hour: '2-digit', minute: '2-digit' });
     const tomorrow = new Date(now);
     tomorrow.setDate(now.getDate() + 1);
     if (date.toDateString() === now.toDateString()) return `today at ${time}`;
     if (date.toDateString() === tomorrow.toDateString()) return `tomorrow at ${time}`;
-    return date.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleString(uiLocale(), { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
   }
 
   function isRetrying(dl) {
@@ -933,7 +941,7 @@
 
   function populateAbout() {
     const meta = state.meta;
-    const version = meta?.version || '1.0.1';
+    const version = meta?.version || '1.0.2';
     if (els.aboutVersion) els.aboutVersion.textContent = `v${version}`;
     if (els.aboutVersionRow) els.aboutVersionRow.textContent = version;
     if (els.aboutEngine) els.aboutEngine.textContent = meta?.engine ? `${meta.engine} · axum` : 'Rust · axum';
@@ -1120,7 +1128,7 @@
   function renderUpdateCard() {
     if (!els.updateTitle || !els.updateNote) return;
     const info = state.update;
-    const current = state.meta?.version || '1.0.1';
+    const current = state.meta?.version || '1.0.2';
     if (els.updateDownload) els.updateDownload.hidden = true;
     if (els.updateCheck) {
       els.updateCheck.hidden = false;
@@ -2125,16 +2133,16 @@
 
   function detailKindLabel(dl) {
     if (dl.kind === 'hls') {
-      return `HLS video${dl.hls?.outputExt ? ` · ${dl.hls.outputExt.toUpperCase()}` : ''}`;
+      return `${tt('HLS video')}${dl.hls?.outputExt ? ` · ${dl.hls.outputExt.toUpperCase()}` : ''}`;
     }
     if (dl.kind === 'dash') {
-      const pieces = [dl.dash?.video ? 'DASH video' : 'DASH audio'];
+      const pieces = [tt(dl.dash?.video ? 'DASH video' : 'DASH audio')];
       if (dl.dash?.video?.resolution) pieces.push(dl.dash.video.resolution);
-      if (dl.dash?.muxed) pieces.push('video + audio');
+      if (dl.dash?.muxed) pieces.push(tt('video + audio'));
       return pieces.join(' · ');
     }
     const ext = extensionOf(dl);
-    return `${CATEGORY_LABEL[categoryOf(dl)]}${ext ? ` · ${ext.toUpperCase()}` : ''}`;
+    return `${tt(CATEGORY_LABEL[categoryOf(dl)])}${ext ? ` · ${ext.toUpperCase()}` : ''}`;
   }
 
   function detailNote(dl) {
@@ -2143,31 +2151,31 @@
       const pieces = [];
       const stream = streamMeta(dl);
       if (stream?.totalSegments) {
-        pieces.push(`${stream.completedSegments} of ${stream.totalSegments} segments`);
+        pieces.push(tt(`${stream.completedSegments} of ${stream.totalSegments} segments`));
       } else if (dl.size) {
-        pieces.push(`${formatBytes(dl.received)} of ${formatBytes(dl.size)}`);
+        pieces.push(tt(`${formatBytes(dl.received)} of ${formatBytes(dl.size)}`));
       } else {
-        pieces.push(`${formatBytes(dl.received)} downloaded`);
+        pieces.push(tt(`${formatBytes(dl.received)} downloaded`));
       }
       if (dl.speed) pieces.push(formatSpeed(dl.speed));
-      if (dl.eta != null) pieces.push(`${formatEta(dl.eta)} left`);
+      if (dl.eta != null) pieces.push(tt(`${formatEta(dl.eta)} left`));
       return pieces.join(' · ');
     }
     if (dl.status === 'queued') {
-      if (isScheduled(dl)) return `Starts ${formatStart(dl.startAt)} · the queue picks it up automatically.`;
-      return `Waiting for a slot · ${settings().maxConcurrent} simultaneous downloads allowed.`;
+      if (isScheduled(dl)) return `${tt(`Starts ${formatStart(dl.startAt)}`)} · ${tt('the queue picks it up automatically.')}`;
+      return `${tt('Waiting for a slot')} · ${tt(`${settings().maxConcurrent} simultaneous downloads allowed.`)}`;
     }
     if (dl.status === 'paused') {
-      return `Paused${percent !== null ? ` at ${Math.round(percent)}%` : ''} · ${formatBytes(dl.received)} saved so far.`;
+      return `${tt(`Paused${percent !== null ? ` at ${Math.round(percent)}%` : ''}`)} · ${tt(`${formatBytes(dl.received)} saved so far.`)}`;
     }
     if (dl.status === 'completed') {
       const duration = formatDuration(streamMeta(dl)?.duration);
-      return `Completed ${timeAgo(dl.completedAt)} · ${formatBytes(dl.size || dl.received)}${duration ? ` · ${duration}` : ''}`;
+      return `${tt(`Completed ${timeAgo(dl.completedAt)}`)} · ${formatBytes(dl.size || dl.received)}${duration ? ` · ${duration}` : ''}`;
     }
     if (dl.status === 'failed') {
-      return 'The engine stopped. Retry to continue; finished segments are kept when the server supports ranges.';
+      return tt('The engine stopped. Retry to continue; finished segments are kept when the server supports ranges.');
     }
-    return STATUS_LABEL[dl.status] || '';
+    return tt(STATUS_LABEL[dl.status] || '');
   }
 
   function toggleActionFor(dl) {
@@ -2194,7 +2202,7 @@
       const duration = formatDuration(stream.duration);
       const resolution = streamResolution(dl);
       const detail = dl.kind === 'dash' && stream.muxed ? 'video + audio' : null;
-      note = `${done} of ${total} segments${duration ? ` · ${duration}` : ''}${resolution ? ` · ${resolution}` : ''}${detail ? ` · ${detail}` : ''}`;
+      note = `${tt(`${done} of ${total} segments`)}${duration ? ` · ${duration}` : ''}${resolution ? ` · ${resolution}` : ''}${detail ? ` · ${tt(detail)}` : ''}`;
     } else if (Array.isArray(dl.segments) && dl.segments.length) {
       const done = dl.segments.filter((seg) => seg.downloaded >= seg.end - seg.start + 1).length;
       signature = `file:${dl.segments.length}:${dl.segments.map((seg) => seg.downloaded || 0).join(',')}`;
@@ -2203,7 +2211,7 @@
         const className = seg.downloaded >= length ? 'segment is-done' : seg.downloaded > 0 ? 'segment is-partial' : 'segment';
         blocks.push(className);
       }
-      note = `${done} of ${dl.segments.length} segments complete · ${dl.connections} connections`;
+      note = `${tt(`${done} of ${dl.segments.length} segments complete`)} · ${tt(`${dl.connections} connections`)}`;
     } else {
       signature = `single:${dl.status}:${dl.received}`;
       note = dl.status === 'downloading'
@@ -3483,6 +3491,13 @@
       });
     }
   }
+
+  document.addEventListener('arus:languagechange', () => {
+    renderMetrics();
+    renderList();
+    renderInspector();
+    renderUpdateCard();
+  });
 
   init();
 })();

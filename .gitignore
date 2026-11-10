@@ -13,3 +13,5 @@ rust-native/gen/
 .scratch/
 
 .vercel
+
+.vercelignore

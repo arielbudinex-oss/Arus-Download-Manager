@@ -86,6 +86,7 @@ fn router(state: Arc<AppState>) -> Router {
         .route("/", get(api_index))
         .route("/index.html", get(api_index))
         .route("/app.js", get(api_app))
+        .route("/i18n.js", get(api_i18n))
         .route("/styles.css", get(api_styles))
         .route("/theme.css", get(api_theme))
         .route("/popup.html", get(api_popup))
@@ -821,6 +822,10 @@ async fn api_index(State(state): State<Arc<AppState>>) -> Response {
 
 async fn api_app(State(state): State<Arc<AppState>>) -> Response {
     serve_ui(&state, "app.js", "text/javascript; charset=utf-8").await
+}
+
+async fn api_i18n(State(state): State<Arc<AppState>>) -> Response {
+    serve_ui(&state, "i18n.js", "text/javascript; charset=utf-8").await
 }
 
 async fn api_styles(State(state): State<Arc<AppState>>) -> Response {

@@ -749,6 +749,14 @@
                 <p class="field-hint">Previews instantly. Saved with the rest of your settings.</p>
               </div>
               <div class="settings-group">
+                <h4>Language</h4>
+                <div class="segmented" id="lang-picker" role="group" aria-label="Language" data-no-i18n>
+                  <button type="button" class="segmented-option" data-lang-value="en">English</button>
+                  <button type="button" class="segmented-option" data-lang-value="id">Bahasa Indonesia</button>
+                </div>
+                <p class="field-hint">Applies to the whole app right away.</p>
+              </div>
+              <div class="settings-group">
                 <h4>Row density</h4>
                 <div class="segmented" id="density-picker" role="group" aria-label="Row density">
                   <button type="button" class="segmented-option is-active" data-density-value="comfortable">Comfortable</button>
@@ -803,7 +811,7 @@
               <div class="about-hero">
                 <img class="about-mark" src="/assets/icon-128.png" alt="">
                 <div>
-                  <h3>Arus <span class="about-version" id="about-version">v1.0.1</span></h3>
+                  <h3>Arus <span class="about-version" id="about-version">v1.0.2</span></h3>
                   <p>A quiet download manager for Windows.</p>
                 </div>
               </div>
@@ -1061,6 +1069,7 @@
 
     <script src="/vendor/qrcode.js"></script>
     <script src="/vendor/qris.js"></script>
+    <script src="/i18n.js"></script>
     <script src="/app.js"></script>
   </body>
 </html>
