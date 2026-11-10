@@ -76,6 +76,7 @@
   "Komunitas terbuka": "Open community",
   "Koneksi paralel, antrean, dan penulisan file dijalankan oleh proses Rust. UI hanya mengirim perintah dan menampilkan progres.": "Parallel connections, queues, and file writes run in a Rust process. The UI only sends commands and shows progress.",
   "kali diunduh": "times downloaded",
+  "unduhan installer": "installer downloads",
   "Langsung ke konten": "Skip to content",
   "Laporkan bug": "Report a bug",
   "Lisensi MIT": "MIT license",
