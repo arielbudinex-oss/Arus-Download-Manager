@@ -109,10 +109,32 @@ module.exports = async function handler(req, res) {
     const countryMap = new Map();
     const dayMap = new Map();
     const sessionMap = new Map();
+    const pageMap = new Map();
+    const refMap = new Map();
+    const ipMap = new Map();
 
     for (let offset = 0; offset < days; offset += 1) {
       const date = new Date(now.getTime() - offset * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
       dayMap.set(date, { date, pageviews: 0, visitors: new Set() });
+    }
+
+    function eventAt(event, fallback) {
+      const ms = Number(event && event.at);
+      if (Number.isFinite(ms) && ms > 0) {
+        const date = new Date(ms);
+        if (!Number.isNaN(date.getTime())) return date.toISOString();
+      }
+      return fallback;
+    }
+
+    function noteEvent(session, at, name, label, href) {
+      if (session.timeline.length >= 200) return;
+      session.timeline.push({
+        at,
+        name,
+        label: String(label || '').slice(0, 120),
+        href: String(href || '').slice(0, 300)
+      });
     }
 
     for (const record of records) {
@@ -126,22 +148,58 @@ module.exports = async function handler(req, res) {
       }
       if (record.ip && record.ip !== 'unknown') ips.add(record.ip);
 
+      const ipKey = String(record.ip || 'unknown').slice(0, 64);
+      let ipEntry = ipMap.get(ipKey);
+      if (!ipEntry) {
+        ipEntry = {
+          ip: ipKey,
+          firstAt: record.at,
+          lastAt: record.at,
+          sessions: new Set(),
+          pageviews: 0,
+          downloads: 0,
+          clicks: 0,
+          events: new Set(),
+          country: '',
+          region: '',
+          city: '',
+          lang: 'id',
+          device: { browser: 'Other', os: 'Other' }
+        };
+        ipMap.set(ipKey, ipEntry);
+      }
+      if (!ipEntry.firstAt || new Date(record.at) < new Date(ipEntry.firstAt)) ipEntry.firstAt = record.at;
+      if (!ipEntry.lastAt || new Date(record.at) >= new Date(ipEntry.lastAt)) {
+        ipEntry.lastAt = record.at;
+        ipEntry.country = record.country || ipEntry.country;
+        ipEntry.region = record.region || ipEntry.region;
+        ipEntry.city = record.city || ipEntry.city;
+        ipEntry.lang = record.lang === 'en' ? 'en' : 'id';
+        ipEntry.device = parseDevice(record.ua);
+      }
+
       const sid = String(record.sid || '').slice(0, 64);
-      const session = sessionMap.get(sid) || {
-        at: record.at,
-        firstAt: record.at,
-        ip: record.ip || '',
-        country: record.country || '',
-        region: record.region || '',
-        city: record.city || '',
-        lang: record.lang === 'en' ? 'en' : 'id',
-        path: record.path || '/',
-        ref: record.ref || '',
-        vw: Number(record.vw) || 0,
-        pageviews: 0,
-        events: new Set(),
-        device: parseDevice(record.ua)
-      };
+      let session = sessionMap.get(sid);
+      if (!session) {
+        session = {
+          at: record.at,
+          firstAt: record.at,
+          ip: record.ip || '',
+          country: record.country || '',
+          region: record.region || '',
+          city: record.city || '',
+          lang: record.lang === 'en' ? 'en' : 'id',
+          path: record.path || '/',
+          ref: record.ref || '',
+          vw: Number(record.vw) || 0,
+          pageviews: 0,
+          downloads: 0,
+          events: new Set(),
+          timeline: [],
+          device: parseDevice(record.ua)
+        };
+      }
+      ipEntry.sessions.add(sid);
       if (new Date(record.at) > new Date(session.at)) {
         session.at = record.at;
         session.ip = record.ip || session.ip;
@@ -160,21 +218,42 @@ module.exports = async function handler(req, res) {
       const entry = countryMap.get(country) || { code: country, views: 0, visitors: new Set() };
       countryMap.set(country, entry);
 
+      const recordPath = String(record.path || '/').slice(0, 80) || '/';
+      const recordRef = String(record.ref || '').slice(0, 200);
+
       for (const event of record.events) {
         if (!event || typeof event.name !== 'string') continue;
+        const when = eventAt(event, record.at);
         if (event.name === 'pageview') {
           totals.pageviews += 1;
           day.pageviews += 1;
           entry.views += 1;
+          ipEntry.pageviews += 1;
           if (vid) entry.visitors.add(vid);
           session.pageviews += 1;
           session.events.add('pageview');
+          noteEvent(session, when, 'pageview', recordPath, recordPath);
+          const page = pageMap.get(recordPath) || { path: recordPath, views: 0, visitors: new Set() };
+          page.views += 1;
+          if (vid) page.visitors.add(vid);
+          pageMap.set(recordPath, page);
+          const ref = refMap.get(recordRef) || { host: recordRef, views: 0, visitors: new Set() };
+          ref.views += 1;
+          if (vid) ref.visitors.add(vid);
+          refMap.set(recordRef, ref);
           continue;
         }
         if (Object.prototype.hasOwnProperty.call(clicks, event.name)) {
           clicks[event.name] += 1;
           totals[event.name === 'download' ? 'downloads' : event.name] += 1;
           session.events.add(event.name);
+          if (event.name === 'download') {
+            session.downloads += 1;
+            ipEntry.downloads += 1;
+          }
+          ipEntry.clicks += 1;
+          ipEntry.events.add(event.name);
+          noteEvent(session, when, event.name, event.label, event.href);
         }
       }
     }
@@ -198,8 +277,44 @@ module.exports = async function handler(req, res) {
         ref: session.ref,
         vw: session.vw,
         pageviews: session.pageviews,
+        downloads: session.downloads,
         events: Array.from(session.events).filter((name) => name !== 'pageview'),
-        device: session.device
+        device: session.device,
+        timeline: session.timeline
+          .slice()
+          .sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime())
+          .slice(-40)
+      }));
+
+    const deviceMap = { browser: new Map(), os: new Map() };
+    for (const session of sessionMap.values()) {
+      const browser = (session.device && session.device.browser) || 'Other';
+      const os = (session.device && session.device.os) || 'Other';
+      deviceMap.browser.set(browser, (deviceMap.browser.get(browser) || 0) + 1);
+      deviceMap.os.set(os, (deviceMap.os.get(os) || 0) + 1);
+    }
+    const topCounts = (map) => Array.from(map.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 6)
+      .map(([name, count]) => ({ name, count }));
+
+    const ipList = Array.from(ipMap.values())
+      .sort((a, b) => new Date(b.lastAt).getTime() - new Date(a.lastAt).getTime())
+      .slice(0, 24)
+      .map((entry) => ({
+        ip: entry.ip,
+        firstAt: entry.firstAt,
+        lastAt: entry.lastAt,
+        country: entry.country,
+        region: entry.region,
+        city: entry.city,
+        lang: entry.lang,
+        device: entry.device,
+        sessions: entry.sessions.size,
+        pageviews: entry.pageviews,
+        downloads: entry.downloads,
+        clicks: entry.clicks,
+        events: Array.from(entry.events)
       }));
 
     json(res, 200, {
@@ -222,7 +337,21 @@ module.exports = async function handler(req, res) {
         .sort((a, b) => b.views - a.views)
         .slice(0, 8)
         .map((entry) => ({ code: entry.code, views: entry.views, visitors: entry.visitors.size })),
+      pages: Array.from(pageMap.values())
+        .sort((a, b) => b.views - a.views)
+        .slice(0, 8)
+        .map((entry) => ({ path: entry.path, views: entry.views, visitors: entry.visitors.size })),
+      refs: Array.from(refMap.values())
+        .sort((a, b) => b.views - a.views)
+        .slice(0, 8)
+        .map((entry) => ({ host: entry.host, views: entry.views, visitors: entry.visitors.size })),
+      devices: {
+        browsers: topCounts(deviceMap.browser),
+        os: topCounts(deviceMap.os)
+      },
       sessions,
+      sessionsTotal: sessionMap.size,
+      ipList,
       batches: records.length,
       since,
       truncated: matching.length > MAX_BLOBS
