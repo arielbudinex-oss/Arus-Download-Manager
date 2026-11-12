@@ -727,7 +727,7 @@
               <div class="settings-group">
                 <h4>Updates</h4>
                 <label class="toggle-row">
-                  <span><strong>Check for updates</strong><small>Ask GitHub for the newest release after launch. No identifiers are sent.</small></span>
+                  <span><strong>Check for updates</strong><small>Ask GitHub for the newest release at launch and while Arus runs. No identifiers are sent.</small></span>
                   <input type="checkbox" id="set-updates">
                   <i class="switch"></i>
                 </label>
@@ -833,7 +833,7 @@
                 <div class="update-copy">
                   <span class="eyebrow">Updates</span>
                   <strong id="update-title">Not checked yet</strong>
-                  <small id="update-note">Ask GitHub for the newest release after launch.</small>
+                  <small id="update-note">Ask GitHub for the newest release at launch and every few hours while Arus runs.</small>
                 </div>
                 <div class="update-actions">
                   <button type="button" class="ghost" id="update-check">Check now</button>
@@ -874,7 +874,7 @@
                 <ul>
                   <li>Arus only connects to servers you ask it to download from or scan.</li>
                   <li>Referer, cookies, and user-agent values are forwarded only to the file host, so authenticated downloads keep working.</li>
-                  <li>If update checks are on, Arus asks GitHub for the latest release after launch. GitHub sees that request like any other web visit; Arus sends no account, machine, or download data.</li>
+                  <li>If update checks are on, Arus asks GitHub for the latest release at launch, every 6 hours while running, and whenever you check manually. GitHub sees those requests like any other web visit; Arus sends no account, machine, or download data.</li>
                   <li>The download controls listen on 127.0.0.1 and are not reachable from other machines.</li>
                   <li>Local sharing is off by default. When you enable it, a separate read-only server exposes your Downloads folder on the chosen network, with no write or delete access. Links and optional passwords expire when sharing stops.</li>
                 </ul>

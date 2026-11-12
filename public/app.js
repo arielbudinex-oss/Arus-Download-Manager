@@ -1166,7 +1166,7 @@
       return;
     }
     els.updateTitle.textContent = 'Not checked yet';
-    els.updateNote.textContent = 'Arus can ask GitHub for newer releases after launch.';
+    els.updateNote.textContent = 'Arus can ask GitHub for newer releases at launch and every few hours while it runs.';
   }
 
   function dialogsBusy() {
