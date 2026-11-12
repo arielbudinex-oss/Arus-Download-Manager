@@ -8,6 +8,7 @@ mod hls;
 mod model;
 mod scan;
 mod server;
+mod share;
 mod store;
 
 use engine::AppState;

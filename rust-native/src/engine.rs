@@ -78,6 +78,7 @@ pub type StartedHook = Arc<dyn Fn(StartedNotice) + Send + Sync>;
 
 pub struct AppState {
     pub core: Mutex<Core>,
+    pub share: crate::share::ShareManager,
     pub data_dir: PathBuf,
     pub temp_dir: PathBuf,
     pub store_path: PathBuf,
@@ -258,6 +259,7 @@ impl AppState {
             .unwrap_or(false);
         Arc::new(Self {
             core: Mutex::new(core),
+            share: crate::share::ShareManager::default(),
             data_dir,
             temp_dir,
             store_path,

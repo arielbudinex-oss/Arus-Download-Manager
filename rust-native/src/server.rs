@@ -61,6 +61,13 @@ pub async fn start(state: Arc<AppState>) -> Result<ServerInfo, String> {
 
 fn router(state: Arc<AppState>) -> Router {
     Router::new()
+        .route(
+            "/api/share",
+            get(api_share_status)
+                .post(api_share_start)
+                .delete(api_share_stop)
+                .layer(axum::extract::DefaultBodyLimit::max(32 * 1024)),
+        )
         .route("/api/state", get(api_state))
         .route("/api/events", get(api_events))
         .route("/api/meta", get(api_meta))
@@ -110,6 +117,15 @@ async fn guard(State(state): State<Arc<AppState>>, req: Request, next: Next) -> 
     let host_name = hostname_of_header(&host_header);
     if !matches!(host_name.as_str(), "127.0.0.1" | "localhost" | "::1") {
         return forbid("Loopback host required");
+    }
+    if path == "/api/share" || path.starts_with("/api/share/") {
+        // Sharing controls deliberately do not inherit legacy extension/port CORS rules.
+        if req.headers().get_all(header::HOST).iter().count() != 1
+            || !crate::share::same_origin(req.headers(), &host_header)
+        {
+            return crate::share::secure_headers(forbid("Origin is not allowed"));
+        }
+        return crate::share::secure_headers(next.run(req).await);
     }
     let origin = req
         .headers()
@@ -233,6 +249,37 @@ fn extension_may_use(method: &Method, path: &str) -> bool {
         return true;
     }
     false
+}
+
+async fn api_share_status(State(state): State<Arc<AppState>>) -> Json<crate::share::ShareStatus> {
+    Json(state.share.status().await)
+}
+
+async fn api_share_start(
+    State(state): State<Arc<AppState>>,
+    Json(input): Json<crate::share::StartShare>,
+) -> Response {
+    let (downloads, download_dir) = {
+        let core = state.core.lock();
+        let downloads = if input.folder {
+            Vec::new()
+        } else {
+            core.downloads
+                .iter()
+                .filter(|download| input.file_ids.contains(&download.id))
+                .cloned()
+                .collect()
+        };
+        (downloads, core.settings.download_dir.clone())
+    };
+    match state.share.start(input, downloads, download_dir).await {
+        Ok(status) => Json(status).into_response(),
+        Err(message) => json_error(StatusCode::BAD_REQUEST, message),
+    }
+}
+
+async fn api_share_stop(State(state): State<Arc<AppState>>) -> Json<crate::share::ShareStatus> {
+    Json(state.share.stop().await)
 }
 
 async fn api_state(State(state): State<Arc<AppState>>) -> Json<Value> {
@@ -1006,4 +1053,55 @@ fn open_file(path: &str) {
 #[allow(dead_code)]
 fn download_public(dl: &Download) -> Value {
     public_download(dl)
+}
+
+#[cfg(test)]
+mod share_control_tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn share_controls_reject_other_ports_extensions_and_cross_site() {
+        let root = std::env::temp_dir().join(format!("arus-share-controls-{}", uuid::Uuid::new_v4()));
+        let state = AppState::new(root.clone(), root.clone(), root.clone(), root.clone());
+        let listener = tokio::net::TcpListener::bind(("127.0.0.1", 0)).await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let base = format!("http://{address}");
+        let cancel = tokio_util::sync::CancellationToken::new();
+        let shutdown = cancel.clone();
+        let app = router(state.clone());
+        let task = tokio::spawn(async move {
+            axum::serve(listener, app).with_graceful_shutdown(shutdown.cancelled_owned()).await.unwrap();
+        });
+        let client = reqwest::Client::builder().no_proxy().timeout(Duration::from_secs(10)).build().unwrap();
+        for method in [Method::GET, Method::POST, Method::DELETE, Method::OPTIONS] {
+            for origin in ["http://127.0.0.1:1", "http://localhost:1", "chrome-extension://example", "moz-extension://example", "http://evil.test"] {
+                let response = client.request(method.clone(), format!("{base}/api/share"))
+                    .header(header::ORIGIN, origin).send().await.unwrap();
+                assert_eq!(response.status(), StatusCode::FORBIDDEN, "{method} {origin}");
+                assert!(!response.headers().contains_key(header::ACCESS_CONTROL_ALLOW_ORIGIN));
+            }
+            let response = client.request(method, format!("{base}/api/share"))
+                .header(header::ORIGIN, &base).header("sec-fetch-site", "cross-site").send().await.unwrap();
+            assert_eq!(response.status(), StatusCode::FORBIDDEN);
+        }
+        // Existing extension access is unchanged.
+        assert_eq!(client.get(format!("{base}/api/meta")).header(header::ORIGIN, "chrome-extension://example")
+            .send().await.unwrap().status(), StatusCode::OK);
+        let response = client.get(format!("{base}/api/share")).header(header::ORIGIN, &base).send().await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(response.headers()[header::CACHE_CONTROL], "no-store");
+        let status: Value = response.json().await.unwrap();
+        assert_eq!(status["enabled"], false);
+        assert_eq!(status["url"], Value::Null);
+        assert_eq!(status["fileIds"], json!([]));
+        assert_eq!(status["expiresAt"], Value::Null);
+        let stopped: Value = client.delete(format!("{base}/api/share")).header(header::ORIGIN, &base)
+            .send().await.unwrap().json().await.unwrap();
+        assert_eq!(stopped["enabled"], false);
+        drop(client);
+        cancel.cancel();
+        tokio::time::timeout(Duration::from_secs(2), task).await.unwrap().unwrap();
+        drop(state);
+        std::fs::remove_dir_all(root).unwrap();
+    }
 }

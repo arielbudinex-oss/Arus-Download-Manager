@@ -20,6 +20,7 @@ Situs: https://arus.xinet.id/
 - Clipboard watch: salin satu tautan, Arus menawarkan untuk mengunduhnya.
 - Ekstensi Chromium untuk menangkap media dan menggantikan unduhan browser, dengan panduan sekali jalan saat Arus pertama dibuka.
 - Tray, notifikasi, dan popup progres yang singkat.
+- Berbagi folder Downloads lewat Wi-Fi lokal. Buka tautan atau QR dari HP atau laptop, jelajahi subfolder, lihat foto, putar video, dan simpan file ke perangkat itu. Masa akses 1 jam sampai tanpa batas, kata sandi opsional, dan bisa dihentikan dari PC.
 - Pengecekan rilis di GitHub yang bisa dimatikan, plus dukungan QRIS di dalam aplikasi.
 - Laporan bug manual dari Settings, About. Log terakhir ikut dikirim setelah link, path folder, dan token URL dibersihkan. Tidak ada laporan otomatis.
 - Tanpa telemetri otomatis, tanpa iklan, tanpa langganan.
@@ -28,11 +29,11 @@ Situs: https://arus.xinet.id/
 
 Arus tidak membawa browser sendiri. Antarmuka memakai WebView2 bawaan Windows, sedangkan engine unduhan berjalan di Rust. Data ditulis ke disk per bagian, jadi mengunduh file besar tidak ikut membesarkan pemakaian RAM.
 
-Angka dari rilis 1.0.1 di Windows 11:
+Angka dari rilis 1.1.0 di Windows 11:
 
 | Aspek | Arus |
 | --- | --- |
-| Installer | 3,5 MB |
+| Installer | 4,1 MB |
 | RAM saat idle | sekitar 19 MB |
 | Runtime | Rust + WebView2 |
 | Telemetri otomatis | tidak ada |
@@ -48,6 +49,12 @@ Kalau ingin memasang manual:
 3. Pilih Load unpacked, arahkan ke folder `extension/` di repo ini.
 
 Ekstensi menghubungi Arus di `127.0.0.1:4477`. Kalau Arus belum berjalan, ekstensi akan mencoba membukanya. Setelah ekstensi terpasang, Arus mendeteksinya sendiri dan menampilkan status Connected di Settings, lalu Capture.
+
+## Berbagi folder lewat Wi-Fi lokal
+
+Buka Share to a device dari sidebar, pilih masa akses 1 jam, 8 jam, 24 jam, atau tanpa batas, lalu pindai QR dari perangkat lain. Perangkat itu membuka folder Downloads di browser dan bisa menelusuri subfolder, melihat foto, memutar video, dan menyimpan file ke dirinya sendiri. Berbagi bersifat baca saja dan berhenti saat kamu menekan Stop atau menutup Arus.
+
+Server hanya mendengarkan di alamat IPv4 privat, memakai token acak 256-bit, dan memeriksa Host serta Origin pada setiap permintaan. Path file dikunci ke folder yang dibagikan, symlink ditolak, dan file tersembunyi tidak ditampilkan. Koneksi memakai HTTP tanpa enkripsi, jadi pakai hanya di jaringan yang kamu percaya. Jangan bagikan tautannya ke orang lain.
 
 ## Build dari source
 

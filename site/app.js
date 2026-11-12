@@ -1,7 +1,10 @@
 (function () {
   'use strict';
 
-  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+  var pointerQuery = window.matchMedia('(hover: hover) and (pointer: fine)');
+  var reduced = motionQuery.matches;
+  var motionControllers = [];
   var siteLang = window.ArusSiteLang;
   var fmt = new Intl.NumberFormat(siteLang ? siteLang.locale : 'id-ID');
   var REPO = 'arielbudinex-oss/Arus-Download-Manager';
@@ -60,21 +63,237 @@
     revealEls.forEach(function (el) { revealObserver.observe(el); });
   }
 
-  /* ------------------------------------------------------- motion accents */
+  /* ------------------------------------------------------- motion lifecycle */
 
-  var finePointer = window.matchMedia('(pointer: fine)').matches;
-  if (finePointer && !reduced) {
-    $$('.magnetic').forEach(function (button) {
-      button.addEventListener('pointermove', function (event) {
-        var rect = button.getBoundingClientRect();
-        var x = (event.clientX - rect.left) / rect.width - 0.5;
-        var y = (event.clientY - rect.top) / rect.height - 0.5;
-        button.style.transform = 'translate3d(' + (x * 4).toFixed(2) + 'px,' + (y * 3).toFixed(2) + 'px,0)';
-      });
-      button.addEventListener('pointerleave', function () {
-        button.style.transform = '';
-      });
+  // One timestamp-driven RAF per figure. No work while hidden, offscreen or settled.
+  function motionFor(element, draw, calm, suspend) {
+    var raf = 0, last = 0, visible = !('IntersectionObserver' in window);
+    function stop() { cancelAnimationFrame(raf); raf = 0; last = 0; }
+    function frame(now) {
+      raf = 0;
+      var dt = last ? Math.min((now - last) / 1000, 1 / 30) : 0;
+      last = now;
+      if (draw(dt)) raf = requestAnimationFrame(frame);
+      else last = 0;
+    }
+    function wake() {
+      if (!raf && visible && !document.hidden && !reduced) raf = requestAnimationFrame(frame);
+    }
+    function sync() {
+      stop();
+      if (reduced) calm();
+      else if (visible && !document.hidden) wake();
+      else if (suspend) suspend();
+    }
+    var observer = visible ? null : new IntersectionObserver(function (entries) {
+      visible = entries[entries.length - 1].isIntersecting;
+      sync();
     });
+    if (observer) observer.observe(element);
+    var controller = {
+      wake: wake, stop: stop, sync: sync,
+      destroy: function () {
+        stop();
+        if (observer) observer.disconnect();
+        motionControllers = motionControllers.filter(function (item) { return item !== controller; });
+      }
+    };
+    motionControllers.push(controller);
+    return controller;
+  }
+  function syncMotion() { motionControllers.slice().forEach(function (item) { item.sync(); }); }
+  motionQuery.addEventListener('change', function () {
+    reduced = motionQuery.matches;
+    if (reduced) {
+      revealEls.forEach(function (el) { el.classList.add('in'); });
+      if (revealObserver) revealObserver.disconnect();
+    }
+    syncMotion();
+    renderDemo();
+  });
+  document.addEventListener('visibilitychange', syncMotion);
+
+  /* Adapted from React Bits SpotlightCard, Magnet and GradientText, pinned at
+     9d9c687dc4f55b23539aa5417b703078047efa74. Copyright (c) 2026 David Haz.
+     MIT + Commons Clause; full notice and source paths in THIRD_PARTY_NOTICES.md.
+     Site-specific only: no proximity field, grain, tilt, flare or ambient loops. */
+
+  var pointerResets = [];
+  pointerQuery.addEventListener('change', function () { pointerResets.forEach(function (reset) { reset(); }); });
+  window.addEventListener('blur', function () { pointerResets.forEach(function (reset) { reset(); }); });
+
+  $$('.magnetic').forEach(function (button) {
+    var inner = $('.magnetic-inner', button);
+    if (!inner) return;
+    var x = 0, y = 0, vx = 0, vy = 0, tx = 0, ty = 0;
+    function reset() {
+      x = y = vx = vy = tx = ty = 0;
+      inner.style.transform = '';
+      motion.stop();
+    }
+    var motion = motionFor(button, function (dt) {
+      // Magnet's damped spring, sub-stepped for stable high-refresh rendering.
+      var steps = Math.max(1, Math.ceil(dt / (1 / 120)));
+      for (var i = 0; i < steps; i++) {
+        var step = dt / steps;
+        vx += (170 * (tx - x) - 26 * vx) * step;
+        vy += (170 * (ty - y) - 26 * vy) * step;
+        x += vx * step; y += vy * step;
+      }
+      var settled = Math.abs(tx - x) + Math.abs(ty - y) + Math.abs(vx) + Math.abs(vy) < 0.05;
+      if (settled) { x = tx; y = ty; vx = vy = 0; }
+      inner.style.transform = 'translate3d(' + x.toFixed(2) + 'px,' + y.toFixed(2) + 'px,0)';
+      return !settled;
+    }, reset, reset);
+    pointerResets.push(reset);
+    button.addEventListener('pointermove', function (event) {
+      if (reduced || !pointerQuery.matches || event.pointerType === 'touch') return;
+      var rect = button.getBoundingClientRect();
+      tx = (event.clientX - rect.left - rect.width / 2) / 12;
+      ty = (event.clientY - rect.top - rect.height / 2) / 12;
+      var length = Math.hypot(tx, ty);
+      if (length > 4) { tx *= 4 / length; ty *= 4 / length; }
+      motion.wake();
+    });
+    button.addEventListener('pointerleave', function () { tx = ty = 0; motion.wake(); });
+    button.addEventListener('pointercancel', reset);
+    button.addEventListener('focus', reset);
+  });
+
+  var shot = $('.spotlight');
+  if (shot) {
+    var sx = 0, sy = 0, px = 0, py = 0, presence = 0, targetPresence = 0;
+    function resetSpotlight() {
+      presence = targetPresence = 0;
+      shot.style.setProperty('--spot-presence', '0');
+      spotlightMotion.stop();
+    }
+    var spotlightMotion = motionFor(shot, function (dt) {
+      var follow = 1 - Math.exp(-dt / 0.08);
+      sx += (px - sx) * follow; sy += (py - sy) * follow;
+      presence += (targetPresence - presence) * (1 - Math.exp(-dt / 0.14));
+      var settled = Math.abs(px - sx) + Math.abs(py - sy) < 0.1 && Math.abs(targetPresence - presence) < 0.002;
+      if (settled) { sx = px; sy = py; presence = targetPresence; }
+      shot.style.setProperty('--spot-x', sx.toFixed(1) + 'px');
+      shot.style.setProperty('--spot-y', sy.toFixed(1) + 'px');
+      shot.style.setProperty('--spot-presence', presence.toFixed(3));
+      return !settled;
+    }, resetSpotlight, resetSpotlight);
+    pointerResets.push(resetSpotlight);
+    shot.addEventListener('pointermove', function (event) {
+      if (reduced || !pointerQuery.matches || event.pointerType === 'touch') return;
+      var rect = shot.getBoundingClientRect();
+      px = event.clientX - rect.left; py = event.clientY - rect.top;
+      if (presence < 0.02) { sx = px; sy = py; }
+      targetPresence = 1;
+      spotlightMotion.wake();
+    });
+    shot.addEventListener('pointerleave', function () { targetPresence = 0; spotlightMotion.wake(); });
+    shot.addEventListener('pointercancel', resetSpotlight);
+    shot.addEventListener('focus', function () {
+      if (reduced || !shot.matches(':focus-visible')) return;
+      px = shot.clientWidth / 2; py = 0; sx = px; sy = py;
+      targetPresence = 1; spotlightMotion.wake();
+    });
+    shot.addEventListener('blur', resetSpotlight);
+  }
+
+  var heading = $('.heading-sweep');
+  if (heading) {
+    var sweepTime = 0;
+    function finishSweep() {
+      sweepTime = 1.4;
+      heading.style.removeProperty('--gt-gradient');
+    }
+    var headingMotion = motionFor(heading, function (dt) {
+      sweepTime += dt;
+      if (sweepTime >= 1.4) { finishSweep(); return false; }
+      // GradientText's cosine-eased linear palette sweep, restricted to one pass.
+      var offset = -70 + (0.5 - Math.cos(Math.PI * sweepTime / 1.4) / 2) * 240;
+      heading.style.setProperty('--gt-gradient', 'linear-gradient(90deg, #83e2c1 ' + (offset - 55) + '%, #edf4ef ' + offset + '%, #83e2c1 ' + (offset + 55) + '%)');
+      return true;
+    }, finishSweep);
+    headingMotion.sync();
+  }
+
+  /* ------------------------------------------------------ parallel download */
+
+  var demo = $('#cara-kerja');
+  var demoPlay = $('#transfer-play');
+  var demoSlow = $('#transfer-slow');
+  var demoValues = [0, 0, 0, 0];
+  var demoRunning = false, demoStarted = false, demoSlowOn = false;
+  var demoStatus = 'Siap. Coba perlambat satu koneksi.';
+  var demoMotion;
+
+  function sayDemo(text) {
+    demoStatus = text;
+    var status = $('#transfer-status');
+    if (status && status.textContent !== tr(text)) status.textContent = tr(text);
+  }
+  function demoDone() { return demoValues.every(function (value) { return value === 64; }); }
+  function renderDemo() {
+    if (!demo) return;
+    var total = 0;
+    $$('.transfer-lane', demo).forEach(function (lane, index) {
+      var value = Math.floor(demoValues[index]);
+      total += value;
+      $('.lane-track i', lane).style.transform = 'scaleX(' + demoValues[index] / 64 + ')';
+      var label = value + ' / 64 MB';
+      if ($('.lane-amount', lane).textContent !== label) $('.lane-amount', lane).textContent = label;
+    });
+    $$('.disk-parts i', demo).forEach(function (part, index) { part.style.transform = 'scaleX(' + demoValues[index] / 64 + ')'; });
+    var totalLabel = total + ' / 256 MB';
+    if ($('#transfer-total').textContent !== totalLabel) $('#transfer-total').textContent = totalLabel;
+    var action = reduced ? 'Tampilkan hasil' : demoRunning ? 'Jeda simulasi' : demoDone() ? 'Ulangi simulasi' : demoStarted ? 'Lanjutkan simulasi' : 'Jalankan simulasi';
+    if (demoPlay.textContent !== tr(action)) demoPlay.textContent = tr(action);
+    sayDemo(demoStatus);
+  }
+  function finishDemo() {
+    if (demoStarted) {
+      demoValues = [64, 64, 64, 64]; demoRunning = false;
+      sayDemo('Selesai. Semua bagian sudah ditulis ke disk.');
+    }
+    renderDemo();
+  }
+  if (demo && demoPlay && demoSlow) {
+    $('.transfer-controls', demo).hidden = false;
+    demoPlay.setAttribute('data-no-i18n', '');
+    demoMotion = motionFor(demo, function (dt) {
+      if (!demoRunning) return false;
+      demoValues = demoValues.map(function (value, index) {
+        var seconds = index === 1 && demoSlowOn ? 7 : [4, 2.7, 3.4, 3][index];
+        return Math.min(64, value + dt * 64 / seconds);
+      });
+      if (demoDone()) finishDemo();
+      else if (demoSlowOn && demoValues[0] === 64 && demoValues[2] === 64 && demoValues[3] === 64) sayDemo('01, 03, 04 selesai. Hanya koneksi 02 yang masih berjalan.');
+      renderDemo();
+      return demoRunning;
+    }, finishDemo);
+    demoPlay.addEventListener('click', function () {
+      if (reduced) {
+        demoStarted = true;
+        demoValues = demoSlowOn ? [64, 32, 64, 64] : [64, 64, 64, 64];
+        sayDemo(demoSlowOn ? 'Cuplikan: 01, 03, 04 selesai; 02 masih setengah jalan.' : 'Selesai. Semua bagian sudah ditulis ke disk.');
+      } else if (demoRunning) {
+        demoRunning = false; demoMotion.stop(); sayDemo('Dijeda. Progres setiap bagian tetap tersimpan.');
+      } else {
+        if (demoDone()) demoValues = [0, 0, 0, 0];
+        demoStarted = demoRunning = true;
+        sayDemo('Empat bagian diunduh dan ditulis bersamaan.');
+        demoMotion.wake();
+      }
+      renderDemo();
+    });
+    demoSlow.addEventListener('click', function () {
+      demoSlowOn = !demoSlowOn;
+      demoSlow.setAttribute('aria-pressed', String(demoSlowOn));
+      demo.classList.toggle('is-slow', demoSlowOn);
+      if (demoDone() || reduced) { demoValues = [0, 0, 0, 0]; demoStarted = false; }
+      sayDemo(demoSlowOn ? 'Koneksi 02 diperlambat. Tiga bagian lain tidak terpengaruh.' : 'Keempat koneksi berjalan tanpa perlambatan tambahan.');
+      renderDemo();
+    });
+    renderDemo();
   }
 
   /* ---------------------------------------------------------- GitHub stats */
@@ -108,28 +327,27 @@
   var statsFallback = false;
   var downloadShown = null;
 
+  var countMotion = null;
   function countUp(el, target) {
-    if (reduced) {
+    var elapsed = 0;
+    function finish() {
       el.textContent = fmt.format(target);
-      return;
+      if (countMotion) countMotion.destroy();
+      countMotion = null;
     }
-    var duration = 900;
-    var startedAt = null;
-    var safety = window.setTimeout(function () {
-      el.textContent = fmt.format(target);
-    }, duration + 400);
-    function frame(now) {
-      if (startedAt === null) startedAt = now;
-      var progress = Math.min(1, (now - startedAt) / duration);
-      var eased = 1 - Math.pow(1 - progress, 3);
-      el.textContent = fmt.format(Math.round(target * eased));
-      if (progress < 1) requestAnimationFrame(frame);
-      else window.clearTimeout(safety);
-    }
-    requestAnimationFrame(frame);
+    if (reduced) { finish(); return; }
+    countMotion = motionFor(el, function (dt) {
+      elapsed += dt;
+      var progress = Math.min(1, elapsed / 0.9);
+      el.textContent = fmt.format(Math.round(target * (1 - Math.pow(1 - progress, 3))));
+      if (progress === 1) finish();
+      return progress < 1;
+    }, finish);
+    countMotion.sync();
   }
 
   function renderStats() {
+    if (countMotion) { countMotion.destroy(); countMotion = null; }
     if (statsFallback) {
       $$('[data-download-total]').forEach(function (el) { el.textContent = '—'; });
       $$('[data-stars], [data-forks]').forEach(function (el) { el.textContent = '-'; });
@@ -315,6 +533,7 @@
       $$('[data-support-step]').forEach(function (el) {
         el.hidden = el.getAttribute('data-support-step') !== value;
       });
+      dialog.setAttribute('aria-labelledby', value === 'qris' ? 'qris-title' : 'support-title');
       if (value === 'qris') setAmount(supportState.lastValid);
     }
 
@@ -429,6 +648,7 @@
   document.addEventListener('arus:languagechange', function () {
     fmt = new Intl.NumberFormat(siteLang ? siteLang.locale : 'id-ID');
     renderStats();
+    renderDemo();
     if (amountInput) amountInput.value = fmt.format(supportState.lastValid);
     if (dialog && dialog.open) setAmount(supportState.lastValid);
   });

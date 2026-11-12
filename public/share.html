@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#070b10">
+  <title>Arus · Berbagi lokal</title>
+  <link rel="stylesheet" href="/share.css">
+  <script src="/share.js" defer></script>
+</head>
+<body>
+  <svg class="sprite" aria-hidden="true" focusable="false">
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6H9l2 2.2h8.5A1.5 1.5 0 0 1 21 9.7v8.8a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v5h4"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.6"/><path d="m3.5 17 5.5-5 4 4 3-2.6 4.5 4"/></symbol>
+    <symbol id="i-video" viewBox="0 0 24 24"><rect x="3" y="5" width="13" height="14" rx="2"/><path d="m16 10 5-3.2v10.4L16 14"/></symbol>
+    <symbol id="i-audio" viewBox="0 0 24 24"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3 2.7 20h18.6z"/><path d="M12 9v5m0 3h.01"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11m-5-5 5 5 5-5"/><path d="M5 20h14"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 4.5 6v6c0 4 3 7 7.5 9 4.5-2 7.5-5 7.5-9V6z"/><path d="M9.5 12l1.8 1.8 3.4-3.6"/></symbol>
+    <symbol id="i-left" viewBox="0 0 24 24"><path d="m14.5 5-7 7 7 7"/></symbol>
+    <symbol id="i-right" viewBox="0 0 24 24"><path d="m9.5 5 7 7-7 7"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9.5 6 6 6-6 6"/></symbol>
+  </svg>
+
+  <a class="skip" href="#library" data-text="skip">Langsung ke file</a>
+
+  <header class="topbar">
+    <div class="brand">
+      <svg class="mark" viewBox="100 100 824 824" aria-hidden="true">
+        <defs>
+          <linearGradient id="arus-tile" x1="512" y1="100" x2="512" y2="924" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#ffffff"/>
+            <stop offset="1" stop-color="#eef4fd"/>
+          </linearGradient>
+          <linearGradient id="arus-blue" x1="512" y1="260" x2="512" y2="740" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#66b8ff"/>
+            <stop offset="0.5" stop-color="#0a84ff"/>
+            <stop offset="1" stop-color="#0058d6"/>
+          </linearGradient>
+        </defs>
+        <rect x="100" y="100" width="824" height="824" rx="210" fill="url(#arus-tile)"/>
+        <path d="M512 312v232" stroke="url(#arus-blue)" stroke-width="96" stroke-linecap="round"/>
+        <path d="M376 544 512 680 648 544" stroke="url(#arus-blue)" stroke-width="96" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <circle cx="512" cy="602" r="48" fill="url(#arus-blue)"/>
+      </svg>
+      <span class="brand-text"><strong>Arus</strong><small data-text="local">Berbagi lokal</small></span>
+    </div>
+    <div class="languages" role="group" aria-label="Language">
+      <button type="button" data-lang="id" aria-pressed="true">ID</button>
+      <button type="button" data-lang="en" aria-pressed="false">EN</button>
+    </div>
+  </header>
+
+  <main id="library">
+    <section class="overview" aria-labelledby="folder-title">
+      <p class="eyebrow" data-text="eyebrow">DARI PC INI</p>
+      <h1 id="folder-title">Unduhanmu</h1>
+      <p class="intro" data-text="intro">Jelajahi folder, lihat foto, putar video, dan simpan file ke perangkat ini.</p>
+    </section>
+
+    <div class="connection" id="connection" role="status" aria-live="polite" hidden>
+      <span class="connection-dot" aria-hidden="true"></span>
+      <span id="connection-text"></span>
+      <button type="button" id="retry" class="btn compact" data-text="retry">Coba lagi</button>
+    </div>
+
+    <form id="password-form" class="password-form" hidden>
+      <h2 data-text="passwordLabel">Password dari pemilik PC</h2>
+      <p class="password-hint" data-text="passwordHint">Tautan ini dilindungi password. Masukkan password yang diberikan terpisah oleh pemilik PC.</p>
+      <label class="field"><span class="sr-only" data-text="passwordLabel">Password dari pemilik PC</span><input id="password" type="password" autocomplete="current-password" maxlength="128" required aria-describedby="password-status"></label>
+      <button type="submit" id="unlock" class="btn primary" data-text="unlock">Buka akses</button>
+      <p id="password-status" class="form-error" role="alert"></p>
+    </form>
+
+    <section id="file-section" hidden aria-labelledby="folder-title">
+      <nav class="crumbs" id="crumbs" aria-label="Folder path"></nav>
+      <div class="toolbar">
+        <label class="search">
+          <svg class="icon" aria-hidden="true"><use href="#i-search"/></svg>
+          <span class="sr-only" data-text="search">Cari di folder ini</span>
+          <input id="search" type="search" autocomplete="off" spellcheck="false" data-placeholder="search">
+        </label>
+        <label class="select">
+          <span class="sr-only" data-text="type">Jenis file</span>
+          <select id="type">
+            <option value="all" data-text="all">Semua file</option>
+            <option value="video" data-text="video">Video</option>
+            <option value="audio" data-text="audio">Audio</option>
+            <option value="image" data-text="image">Gambar</option>
+            <option value="file" data-text="other">Lainnya</option>
+          </select>
+        </label>
+      </div>
+      <div class="library-meta">
+        <p id="count" class="count" role="status" aria-live="polite"></p>
+        <button type="button" id="refresh" class="link-btn" data-text="refresh">Muat ulang</button>
+      </div>
+      <p class="banner" id="truncated" hidden data-text="truncated">Folder ini berisi lebih dari 1.000 item. Yang ditampilkan hanya 1.000 pertama.</p>
+      <ul class="items" id="items" aria-label="Folder contents"></ul>
+      <div class="empty" id="empty" hidden>
+        <svg class="empty-icon" aria-hidden="true"><use href="#i-folder"/></svg>
+        <p id="empty-text"></p>
+        <button type="button" id="empty-reset" class="link-btn" data-text="clearFilters" hidden>Hapus filter</button>
+      </div>
+      <p class="expiry" id="expiry"></p>
+    </section>
+
+    <aside class="notice">
+      <svg class="icon" aria-hidden="true"><use href="#i-shield"/></svg>
+      <div>
+        <h2 data-text="noticeTitle">Hanya di jaringan yang kamu percaya.</h2>
+        <p data-text="notice">Tautan ini membuka folder Unduhan di PC. Jangan bagikan ke orang lain. Koneksi lokal memakai HTTP, bukan koneksi terenkripsi. Biarkan PC menyala dan Arus tetap berjalan.</p>
+      </div>
+    </aside>
+  </main>
+
+  <footer><span>Arus</span><span data-text="footer">File tetap di PC. Pemilik PC yang mengatur akses.</span></footer>
+
+  <dialog id="viewer" aria-labelledby="viewer-title">
+    <div class="viewer">
+      <header class="viewer-head">
+        <div class="viewer-title">
+          <h2 id="viewer-title"></h2>
+          <p id="viewer-meta"></p>
+        </div>
+        <button type="button" id="close-viewer" class="viewer-close" aria-label="Tutup"><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg></button>
+      </header>
+      <div class="viewer-stage" id="media"></div>
+      <p id="media-error" class="viewer-error" role="alert" hidden data-text="mediaError">Browser ini tidak bisa memutar format tersebut, atau file sudah tidak tersedia. Unduh lalu buka di pemutar yang sesuai.</p>
+      <footer class="viewer-foot">
+        <div class="viewer-nav">
+          <button type="button" id="prev-media" class="btn icon-btn" aria-label="File sebelumnya"><svg class="icon" aria-hidden="true"><use href="#i-left"/></svg></button>
+          <button type="button" id="next-media" class="btn icon-btn" aria-label="File berikutnya"><svg class="icon" aria-hidden="true"><use href="#i-right"/></svg></button>
+        </div>
+        <a id="viewer-download" class="btn primary" data-text="download">Unduh</a>
+      </footer>
+    </div>
+  </dialog>
+</body>
+</html>

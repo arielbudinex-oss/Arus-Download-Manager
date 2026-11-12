@@ -1,6 +1,6 @@
 [package]
 name = "arus-native"
-version = "1.0.3"
+version = "1.1.0"
 edition = "2021"
 build = "build.rs"
 description = "Arus native download manager"
@@ -32,9 +32,10 @@ quick-xml = "0.37"
 parking_lot = "0.12"
 mime_guess = "2"
 rfd = "0.15"
+argon2 = "0.5.3"
 
 [target.'cfg(windows)'.dependencies]
-windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Graphics_Dwm", "Win32_System_DataExchange", "Win32_System_Memory", "Win32_UI_WindowsAndMessaging"] }
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Graphics_Dwm", "Win32_System_DataExchange", "Win32_System_Memory", "Win32_Storage_FileSystem", "Win32_UI_WindowsAndMessaging"] }
 
 [profile.release]
 lto = true

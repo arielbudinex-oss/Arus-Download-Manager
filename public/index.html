@@ -88,6 +88,8 @@
         <div class="nav-label">Types</div>
         <nav class="nav" id="type-nav" aria-label="Types"></nav>
 
+        <button type="button" class="lan-open" id="share-btn"><svg class="icon" aria-hidden="true"><use href="#i-monitor"/></svg><span>Share to a device</span></button>
+
         <div class="side-card">
           <div class="side-card-head">
             <span>Queue</span>
@@ -134,6 +136,9 @@
               <input id="search" type="search" placeholder="Search downloads" aria-label="Search downloads" autocomplete="off" spellcheck="false">
               <kbd>Ctrl F</kbd>
             </div>
+            <button class="icon-btn framed" id="share-head-btn" title="Share to a device" aria-label="Share to a device">
+              <svg class="icon"><use href="#i-monitor"/></svg>
+            </button>
             <button class="icon-btn framed" id="open-folder" title="Open downloads folder" aria-label="Open downloads folder">
               <svg class="icon"><use href="#i-folder"/></svg>
             </button>
@@ -811,7 +816,7 @@
               <div class="about-hero">
                 <img class="about-mark" src="/assets/icon-128.png" alt="">
                 <div>
-                  <h3>Arus <span class="about-version" id="about-version">v1.0.3</span></h3>
+                  <h3>Arus <span class="about-version" id="about-version">v1.1.0</span></h3>
                   <p>A quiet download manager for Windows.</p>
                 </div>
               </div>
@@ -870,7 +875,8 @@
                   <li>Arus only connects to servers you ask it to download from or scan.</li>
                   <li>Referer, cookies, and user-agent values are forwarded only to the file host, so authenticated downloads keep working.</li>
                   <li>If update checks are on, Arus asks GitHub for the latest release after launch. GitHub sees that request like any other web visit; Arus sends no account, machine, or download data.</li>
-                  <li>The engine listens on 127.0.0.1 and is not reachable from other machines.</li>
+                  <li>The download controls listen on 127.0.0.1 and are not reachable from other machines.</li>
+                  <li>Local sharing is off by default. When you enable it, a separate read-only server exposes your Downloads folder on the chosen network, with no write or delete access. Links and optional passwords expire when sharing stops.</li>
                 </ul>
               </div>
               <div class="policy-block">
@@ -901,7 +907,7 @@
                 <h4>Clipboard and telemetry</h4>
                 <ul>
                   <li>Clipboard watching reads links locally and can be turned off under Behaviour.</li>
-                  <li>There is no automatic telemetry, analytics, account system, or cloud sync. Only a bug report you send yourself leaves this PC.</li>
+                  <li>There is no automatic telemetry, analytics, account system, or cloud sync. Bug reports are sent only by you. Selected files leave this PC only when a device accesses your active local share.</li>
                 </ul>
               </div>
               <p class="settings-fineprint">This policy ships with the app and changes when the app changes.</p>
@@ -1005,6 +1011,68 @@
           </div>
         </footer>
       </div>
+    </dialog>
+
+    <dialog class="modal update-modal" id="update-dialog" aria-labelledby="update-dialog-title">
+      <div class="modal-card">
+        <header class="modal-head">
+          <div>
+            <h2 id="update-dialog-title">A new version is ready</h2>
+            <p>A newer Arus build is available on GitHub.</p>
+          </div>
+          <button type="button" class="icon-btn" id="update-close" aria-label="Close update" title="Close"><svg class="icon"><use href="#i-x"/></svg></button>
+        </header>
+        <div class="update-body">
+          <div class="update-hero">
+            <img class="update-mark" src="/assets/icon-128.png" alt="">
+            <div class="update-versions">
+              <div><span>You are on</span><strong id="update-from">1.1.0</strong></div>
+              <svg class="icon update-arrow" aria-hidden="true"><use href="#i-right"/></svg>
+              <div><span>Latest version</span><strong id="update-to">1.1.0</strong></div>
+            </div>
+          </div>
+          <ul class="update-list">
+            <li>Share your Downloads folder with a phone or laptop on the same Wi-Fi.</li>
+            <li>Browse folders, view photos, play videos, and save files straight to the other device.</li>
+            <li>A refreshed installer and icons that match the current Arus mark.</li>
+          </ul>
+          <p class="update-note">The release page opens in your browser so you can download the new installer from GitHub.</p>
+        </div>
+        <footer class="modal-foot">
+          <span class="update-hint">You can update later from About.</span>
+          <div class="foot-actions">
+            <button type="button" class="ghost" id="update-later">Later</button>
+            <button type="button" class="primary" id="update-go">Download update</button>
+          </div>
+        </footer>
+      </div>
+    </dialog>
+
+    <dialog class="modal lan-modal" id="share-dialog" aria-labelledby="share-title">
+      <form class="modal-card" id="share-form">
+        <header class="modal-head"><div><h2 id="share-title">Share this PC</h2><p>Browse your Downloads folder from a phone or laptop on this network.</p></div><button type="button" class="icon-btn" data-close aria-label="Close"><svg class="icon"><use href="#i-x"/></svg></button></header>
+        <div class="lan-body">
+          <div class="lan-access" id="share-access" hidden>
+            <div class="lan-qr" id="share-qr" aria-label="Scan to open shared files" data-no-i18n></div>
+            <div class="lan-link"><strong>Scan with your phone camera</strong><p>Connect to the same Wi-Fi, then open the link. Keep Arus running and the PC awake.</p><label class="field"><span>Private link</span><input id="share-url" readonly spellcheck="false" data-no-i18n></label><div class="lan-link-actions"><button type="button" class="ghost" id="share-copy">Copy link</button><button type="button" class="ghost is-danger" id="share-stop">Stop sharing</button></div><p id="share-expiry" class="field-hint" data-no-i18n></p></div>
+          </div>
+          <p id="share-status" class="lan-status" role="status" aria-live="polite"></p>
+          <div class="lan-scope">
+            <span class="lan-scope-icon" aria-hidden="true"><svg class="icon"><use href="#i-folder"/></svg></span>
+            <div class="lan-scope-text"><span class="lan-scope-label">Folder access</span><strong id="share-folder-name">Downloads</strong><span class="lan-scope-path" id="share-folder-path" data-no-i18n></span></div>
+          </div>
+          <p class="lan-scope-note">Anyone you allow can browse every subfolder, view photos, play videos, and save files to their device. New downloads appear right away. Arus never edits or deletes your files while sharing.</p>
+          <div class="lan-grid">
+            <label class="field"><span>Local network</span><select id="share-network" required data-no-i18n></select></label>
+            <label class="field"><span>Access ends</span><select id="share-lifetime"><option value="1h">In 1 hour</option><option value="8h" selected>In 8 hours</option><option value="24h">In 24 hours</option><option value="always">No time limit</option></select></label>
+          </div>
+          <div class="lan-password"><label class="lan-check"><input type="checkbox" id="share-password-enabled"><span>Require a password</span></label><label class="field" id="share-password-field" hidden><span>Access password</span><input id="share-password" type="password" minlength="8" maxlength="128" autocomplete="new-password" aria-describedby="share-password-hint"><small id="share-password-hint" class="field-hint">Use 8 or more characters. Send the password separately from the QR code.</small></label></div>
+          <p class="lan-warning">Use only trusted Wi-Fi. HTTP is not encrypted, even with a password. Anyone with the link and password, if enabled, can open every file in this folder. No router or firewall settings are changed.</p>
+          <details class="lan-help"><summary>Phone cannot connect?</summary><p>Use the same Wi-Fi, not a guest network. Disable mobile data for the test. If Windows asks, allow Arus only on a trusted Private network. Never open a router port. If the PC changes network, stop sharing and create a new QR.</p></details>
+          <p class="field-hint" id="share-renew-hint" hidden>Updating creates a new QR and disconnects existing viewers. Re-enter the password if you want to keep password protection.</p>
+        </div>
+        <footer class="modal-foot"><span class="hint" id="share-foot-hint">Access closes when you stop sharing or Arus quits.</span><div class="foot-actions"><button type="button" class="ghost" data-close>Close</button><button type="submit" class="primary" id="share-start" disabled>Start sharing</button></div></footer>
+      </form>
     </dialog>
 
     <dialog class="modal report-modal" id="report-dialog" aria-labelledby="report-title">

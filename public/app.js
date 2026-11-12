@@ -341,6 +341,12 @@
     updateNote: $('#update-note'),
     updateCheck: $('#update-check'),
     updateDownload: $('#update-download'),
+    updateDialog: $('#update-dialog'),
+    updateFrom: $('#update-from'),
+    updateTo: $('#update-to'),
+    updateClose: $('#update-close'),
+    updateLater: $('#update-later'),
+    updateGo: $('#update-go'),
     aboutSupport: $('#about-support'),
     aboutGithub: $('#about-github'),
     aboutDiscord: $('#about-discord'),
@@ -941,7 +947,7 @@
 
   function populateAbout() {
     const meta = state.meta;
-    const version = meta?.version || '1.0.3';
+    const version = meta?.version || '1.1.0';
     if (els.aboutVersion) els.aboutVersion.textContent = `v${version}`;
     if (els.aboutVersionRow) els.aboutVersionRow.textContent = version;
     if (els.aboutEngine) els.aboutEngine.textContent = meta?.engine ? `${meta.engine} · axum` : 'Rust · axum';
@@ -1128,7 +1134,7 @@
   function renderUpdateCard() {
     if (!els.updateTitle || !els.updateNote) return;
     const info = state.update;
-    const current = state.meta?.version || '1.0.3';
+    const current = state.meta?.version || '1.1.0';
     if (els.updateDownload) els.updateDownload.hidden = true;
     if (els.updateCheck) {
       els.updateCheck.hidden = false;
@@ -1162,6 +1168,40 @@
     els.updateNote.textContent = 'Arus can ask GitHub for newer releases after launch.';
   }
 
+  function dialogsBusy() {
+    return [...document.querySelectorAll('dialog')].some((dialog) => dialog.open && dialog !== els.updateDialog);
+  }
+
+  function showUpdateDialog(info, options = {}) {
+    if (!els.updateDialog || !info.latest) return;
+    if (els.updateDialog.open) return;
+    if (!options.force && readStore(UPDATE_NOTICE_KEY) === info.latest) return;
+    if (dialogsBusy()) {
+      const busy = [...document.querySelectorAll('dialog')].find((dialog) => dialog.open && dialog !== els.updateDialog);
+      if (!busy || busy.dataset.updateWait === '1') return;
+      busy.dataset.updateWait = '1';
+      busy.addEventListener('close', () => {
+        delete busy.dataset.updateWait;
+        showUpdateDialog(info, { ...options, force: true });
+      }, { once: true });
+      return;
+    }
+    writeStore(UPDATE_NOTICE_KEY, info.latest);
+    if (els.updateFrom) els.updateFrom.textContent = info.current || state.meta?.version || '';
+    if (els.updateTo) els.updateTo.textContent = info.latest;
+    els.updateDialog.showModal();
+  }
+
+  function closeUpdateDialog() {
+    if (els.updateDialog?.open) els.updateDialog.close();
+  }
+
+  function openUpdateRelease() {
+    const url = state.update.url || `${REPO_URL}/releases/latest`;
+    closeUpdateDialog();
+    openExternal(url);
+  }
+
   async function checkForUpdates(options = {}) {
     if (state.update.status === 'loading') return;
     state.update = { ...state.update, status: 'loading' };
@@ -1182,16 +1222,14 @@
           toast({ icon: 'i-alert', title: 'Could not check for updates', body: result.error, timeout: 6000 });
         }
       } else if (result.available) {
-        if (readStore(UPDATE_NOTICE_KEY) !== result.latest) {
-          writeStore(UPDATE_NOTICE_KEY, result.latest || '');
-          toast({
-            icon: 'i-download',
-            title: `Arus ${result.latest} is available`,
-            body: `You are on ${result.current || state.meta?.version || ''}. Open the release page to install it.`,
-            timeout: 14000,
-            actions: [{ label: 'Download update', primary: true, onClick: () => openExternal(state.update.url) }]
-          });
-        }
+        showUpdateDialog(
+          {
+            latest: result.latest || '',
+            current: result.current || state.meta?.version || '',
+            url: state.update.url
+          },
+          { force: !options.silent }
+        );
       } else if (!options.silent) {
         toast({
           icon: 'i-check',
@@ -2977,6 +3015,130 @@
     return picked && picked.trim() ? picked.trim() : null;
   }
 
+  let shareData = null;
+  let shareBusy = false;
+  let shareTimer = null;
+  const shareEl = (id) => document.getElementById(`share-${id}`);
+  const shareText = (value) => window.ArusLang?.t(value) || value;
+
+  function updateShareForm() {
+    shareEl('start').disabled = shareBusy || !shareEl('network').value;
+    shareEl('foot-hint').textContent = shareEl('lifetime').value === 'always'
+      ? 'No time limit. Access closes when you stop sharing or Arus quits.'
+      : 'Access closes when the period is over, when you stop sharing, or when Arus quits.';
+  }
+
+  function folderName(path) {
+    const parts = String(path || '').split(/[\\/]/).filter(Boolean);
+    return parts.length ? parts[parts.length - 1] : 'Downloads';
+  }
+
+  function renderShareStatus(data) {
+    shareData = data;
+    shareEl('access').hidden = !data.enabled;
+    shareEl('renew-hint').hidden = !data.enabled;
+    shareEl('start').textContent = data.enabled ? 'Update sharing' : 'Start sharing';
+    shareEl('status').textContent = data.enabled
+      ? (data.passwordProtected ? 'Folder sharing is on. Viewers need the password.' : 'Folder sharing is on. Anyone with this link can browse.')
+      : 'Sharing is off. Allow access to your Downloads folder when you are ready.';
+    shareEl('url').value = data.url || '';
+    shareEl('qr').replaceChildren();
+    if (data.enabled && data.url) {
+      const qr = window.qrcode(0, 'M');
+      qr.addData(data.url); qr.make();
+      shareEl('qr').innerHTML = qr.createSvgTag({ cellSize: 5, margin: 4, scalable: true });
+      shareEl('qr').querySelector('svg')?.setAttribute('aria-hidden', 'true');
+    }
+    shareEl('expiry').textContent = !data.enabled ? ''
+      : data.expiresAt
+        ? `${shareText('Access ends')}: ${new Date(data.expiresAt).toLocaleString(window.ArusLang?.locale, { dateStyle: 'medium', timeStyle: 'short' })}`
+        : 'No time limit. Access ends when you stop sharing or Arus quits.';
+    if (data.enabled && ['1h', '8h', '24h', 'always'].includes(data.lifetime)) shareEl('lifetime').value = data.lifetime;
+    updateShareForm();
+  }
+
+  async function openShareDialog() {
+    if (!state.data) return;
+    const folder = settings().downloadDir || '';
+    shareEl('folder-name').textContent = folderName(folder);
+    shareEl('folder-path').textContent = folder;
+    shareEl('folder-path').title = folder;
+    shareEl('dialog').showModal();
+    shareEl('status').textContent = 'Checking local networks…';
+    shareEl('start').disabled = true;
+    shareEl('access').hidden = true;
+    shareEl('password').value = '';
+    shareEl('password-enabled').checked = false;
+    shareEl('password-field').hidden = true;
+    shareEl('password').required = false;
+    clearInterval(shareTimer);
+    try {
+      const data = await api('/api/share');
+      if (!shareEl('dialog').open) return;
+      shareEl('network').replaceChildren();
+      for (const network of data.interfaces) {
+        shareEl('network').add(new Option(`${network.label} · ${network.address}`, network.address));
+      }
+      if (data.url) shareEl('network').value = new URL(data.url).hostname;
+      renderShareStatus(data);
+      if (!data.interfaces.length) shareEl('status').textContent = 'No private network found. Connect this PC to trusted Wi-Fi or Ethernet, then reopen this panel.';
+      shareEl('password-enabled').checked = !!data.passwordProtected;
+      shareEl('password-field').hidden = !data.passwordProtected;
+      shareEl('password').required = !!data.passwordProtected;
+      shareTimer = setInterval(async () => {
+        if (!shareEl('dialog').open || shareBusy || !shareData?.enabled) return;
+        try {
+          const latest = await api('/api/share');
+          if (shareEl('dialog').open && !shareBusy && latest.enabled !== shareData.enabled) renderShareStatus(latest);
+        } catch { shareEl('status').textContent = 'Could not reach local sharing. Check that Arus is still running.'; }
+      }, 15000);
+    } catch (error) {
+      shareEl('status').textContent = error.message;
+    }
+  }
+
+  function setShareBusy(value) {
+    shareBusy = value;
+    shareEl('dialog').querySelectorAll('button, input, select').forEach((control) => { control.disabled = value; });
+    updateShareForm();
+  }
+
+  async function startShare(event) {
+    event.preventDefault();
+    if (shareBusy) return;
+    const password = shareEl('password-enabled').checked ? shareEl('password').value : '';
+    if (!shareEl('form').reportValidity()) return;
+    setShareBusy(true);
+    shareEl('status').textContent = 'Preparing private access…';
+    try {
+      const data = await api('/api/share', {
+        method: 'POST',
+        body: {
+          address: shareEl('network').value,
+          fileIds: [],
+          password,
+          folder: true,
+          lifetime: shareEl('lifetime').value
+        }
+      });
+      renderShareStatus(data);
+      shareEl('password').value = '';
+    } catch (error) { shareEl('status').textContent = error.message; }
+    finally { setShareBusy(false); }
+    if (shareData?.enabled) shareEl('url').focus();
+  }
+
+  async function stopShare() {
+    if (shareBusy) return;
+    setShareBusy(true);
+    try {
+      const data = await api('/api/share', { method: 'DELETE' });
+      renderShareStatus(data);
+      shareEl('password').value = '';
+    } catch (error) { shareEl('status').textContent = error.message; }
+    finally { setShareBusy(false); }
+  }
+
   function openSettingsDialog(tab = 'downloads') {
     if (!state.data) return;
     const current = settings();
@@ -3103,6 +3265,33 @@
       );
     });
 
+    shareEl('btn').addEventListener('click', openShareDialog);
+    document.getElementById('share-head-btn')?.addEventListener('click', openShareDialog);
+    shareEl('form').addEventListener('submit', startShare);
+    shareEl('stop').addEventListener('click', stopShare);
+    shareEl('network').addEventListener('change', updateShareForm);
+    shareEl('lifetime').addEventListener('change', updateShareForm);
+    shareEl('password-enabled').addEventListener('change', () => {
+      const enabled = shareEl('password-enabled').checked;
+      shareEl('password-field').hidden = !enabled;
+      shareEl('password').required = enabled;
+      if (enabled) shareEl('password').focus(); else shareEl('password').value = '';
+    });
+    shareEl('copy').addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(shareEl('url').value);
+        shareEl('status').textContent = 'Private link copied. Share it only with people you trust.';
+      } catch {
+        shareEl('url').focus(); shareEl('url').select();
+        shareEl('status').textContent = 'Copy the selected link manually.';
+      }
+    });
+    shareEl('dialog').addEventListener('cancel', (event) => { if (shareBusy) event.preventDefault(); });
+    shareEl('dialog').addEventListener('close', () => {
+      clearInterval(shareTimer); shareTimer = null;
+      shareEl('password').value = '';
+      shareEl('qr').replaceChildren(); shareEl('url').value = '';
+    });
     els.settingsBtn.addEventListener('click', () => openSettingsDialog('downloads'));
     els.aboutBtn.addEventListener('click', () => openSettingsDialog('about'));
     els.privacyBtn.addEventListener('click', () => openSettingsDialog('privacy'));
@@ -3112,6 +3301,9 @@
     els.aboutDiscord.addEventListener('click', () => openExternal(DISCORD_URL));
     els.updateCheck.addEventListener('click', () => checkForUpdates());
     els.updateDownload.addEventListener('click', () => openExternal(state.update.url));
+    els.updateClose.addEventListener('click', closeUpdateDialog);
+    els.updateLater.addEventListener('click', closeUpdateDialog);
+    els.updateGo.addEventListener('click', openUpdateRelease);
     els.extOpenBrowser.addEventListener('click', openExtensionBrowser);
     els.setupOpenBrowser.addEventListener('click', openExtensionBrowser);
     els.setupCopyPath.addEventListener('click', copyExtensionPath);
