@@ -279,7 +279,7 @@
     /* what's new */
     'Baru': 'New',
     'Apa yang baru': "What's new",
-    'Arus 1.1.0: Downloads jadi drive bersama.': 'Arus 1.1.0: Downloads becomes a shared drive.',
+    'Arus 1.1.0: Downloads jadi drive bersama.': 'Arus 1.1.0: Your Downloads folder, now a shared drive.',
     'Rilis 12 November 2026. Buka satu tautan dari HP atau laptop yang terhubung ke Wi-Fi yang sama, lalu jelajahi folder unduhan seperti penyimpanan jaringan.': 'Released November 12, 2026. Open one link from a phone or laptop on the same Wi-Fi, then browse your Downloads folder like network storage.',
     '12 November 2026': 'November 12, 2026',
     'Berbagi folder lewat Wi-Fi lokal': 'Share a folder over local Wi-Fi',
