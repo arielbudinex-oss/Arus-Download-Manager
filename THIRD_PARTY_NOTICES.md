@@ -27,14 +27,12 @@ Copyright (c) 2026 David Haz. Source: https://github.com/DavidHDev/react-bits
 
 Pinned revision: `9d9c687dc4f55b23539aa5417b703078047efa74`.
 
-The screenshot-frame spotlight, inner download-button spring, and finite heading
-sweep in `site/app.js` and `site/styles.css` adapt these exact source files:
+The screenshot-frame pointer presence and inner download-button spring in
+`site/app.js` and `site/styles.css` adapt these exact source files:
 
 - [`src/content/Components/SpotlightCard/SpotlightCard.jsx`](https://github.com/DavidHDev/react-bits/blob/9d9c687dc4f55b23539aa5417b703078047efa74/src/content/Components/SpotlightCard/SpotlightCard.jsx)
 - [`src/content/Components/SpotlightCard/SpotlightCard.css`](https://github.com/DavidHDev/react-bits/blob/9d9c687dc4f55b23539aa5417b703078047efa74/src/content/Components/SpotlightCard/SpotlightCard.css)
 - [`src/content/Animations/Magnet/Magnet.jsx`](https://github.com/DavidHDev/react-bits/blob/9d9c687dc4f55b23539aa5417b703078047efa74/src/content/Animations/Magnet/Magnet.jsx)
-- [`src/content/TextAnimations/GradientText/GradientText.jsx`](https://github.com/DavidHDev/react-bits/blob/9d9c687dc4f55b23539aa5417b703078047efa74/src/content/TextAnimations/GradientText/GradientText.jsx)
-- [`src/content/TextAnimations/GradientText/GradientText.css`](https://github.com/DavidHDev/react-bits/blob/9d9c687dc4f55b23539aa5417b703078047efa74/src/content/TextAnimations/GradientText/GradientText.css)
 
 These are minimal vanilla-JavaScript adaptations incorporated into the Arus
 website, not a standalone component distribution. React, GSAP, ambient effects,

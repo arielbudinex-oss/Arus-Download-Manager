@@ -113,7 +113,7 @@
   });
   document.addEventListener('visibilitychange', syncMotion);
 
-  /* Adapted from React Bits SpotlightCard, Magnet and GradientText, pinned at
+  /* Adapted from React Bits SpotlightCard and Magnet, pinned at
      9d9c687dc4f55b23539aa5417b703078047efa74. Copyright (c) 2026 David Haz.
      MIT + Commons Clause; full notice and source paths in THIRD_PARTY_NOTICES.md.
      Site-specific only: no proximity field, grain, tilt, flare or ambient loops. */
@@ -196,24 +196,6 @@
       targetPresence = 1; spotlightMotion.wake();
     });
     shot.addEventListener('blur', resetSpotlight);
-  }
-
-  var heading = $('.heading-sweep');
-  if (heading) {
-    var sweepTime = 0;
-    function finishSweep() {
-      sweepTime = 1.4;
-      heading.style.removeProperty('--gt-gradient');
-    }
-    var headingMotion = motionFor(heading, function (dt) {
-      sweepTime += dt;
-      if (sweepTime >= 1.4) { finishSweep(); return false; }
-      // GradientText's cosine-eased linear palette sweep, restricted to one pass.
-      var offset = -70 + (0.5 - Math.cos(Math.PI * sweepTime / 1.4) / 2) * 240;
-      heading.style.setProperty('--gt-gradient', 'linear-gradient(90deg, #83e2c1 ' + (offset - 55) + '%, #edf4ef ' + offset + '%, #83e2c1 ' + (offset + 55) + '%)');
-      return true;
-    }, finishSweep);
-    headingMotion.sync();
   }
 
   /* ------------------------------------------------------ parallel download */
