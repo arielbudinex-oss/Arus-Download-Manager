@@ -2,7 +2,7 @@ use crate::engine::{AddInput, AppState};
 use crate::model::{now_ms, public_download, Download};
 use crate::scan::scan_page;
 use axum::body::Bytes;
-use axum::extract::{Path, Request, State};
+use axum::extract::{Path, Query, Request, State};
 use axum::http::{header, HeaderValue, Method, StatusCode};
 use axum::middleware::{self, Next};
 use axum::response::sse::{Event, KeepAlive, Sse};
@@ -333,16 +333,22 @@ async fn api_meta(State(state): State<Arc<AppState>>) -> Json<Value> {
     }))
 }
 
-async fn api_update_check(State(state): State<Arc<AppState>>) -> Json<Value> {
-    Json(check_for_update(&state).await)
+async fn api_update_check(
+    State(state): State<Arc<AppState>>,
+    Query(query): Query<HashMap<String, String>>,
+) -> Json<Value> {
+    let force = query
+        .get("refresh")
+        .is_some_and(|value| matches!(value.as_str(), "1" | "true" | "yes"));
+    Json(check_for_update(&state, force).await)
 }
 
-async fn check_for_update(state: &Arc<AppState>) -> Value {
+async fn check_for_update(state: &Arc<AppState>, force: bool) -> Value {
     const REPO: &str = "arielbudinex-oss/Arus-Download-Manager";
-    const CACHE_MS: u64 = 6 * 60 * 60 * 1000;
+    const CACHE_MS: u64 = 15 * 60 * 1000;
     const ERROR_CACHE_MS: u64 = 5 * 60 * 1000;
     let now = now_ms();
-    {
+    if !force {
         let cache = state.update_cache.lock();
         if let Some((expires_at, cached)) = cache.as_ref() {
             if now < *expires_at {

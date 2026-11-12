@@ -10,6 +10,7 @@
   const SETUP_KEY = 'arus.setup.v1';
   const SUPPORT_KEY = 'arus.support.v1';
   const UPDATE_NOTICE_KEY = 'arus.updateNotice.v1';
+  const UPDATE_INTERVAL_MS = 6 * 60 * 60 * 1000;
   const SITE_URL = 'https://arus.xinet.id';
   const REPORT_ENDPOINT = `${SITE_URL}/api/report`;
   const REPORT_LOG_LIMIT = 60;
@@ -947,7 +948,7 @@
 
   function populateAbout() {
     const meta = state.meta;
-    const version = meta?.version || '1.1.0';
+    const version = meta?.version || '1.1.1';
     if (els.aboutVersion) els.aboutVersion.textContent = `v${version}`;
     if (els.aboutVersionRow) els.aboutVersionRow.textContent = version;
     if (els.aboutEngine) els.aboutEngine.textContent = meta?.engine ? `${meta.engine} · axum` : 'Rust · axum';
@@ -1134,7 +1135,7 @@
   function renderUpdateCard() {
     if (!els.updateTitle || !els.updateNote) return;
     const info = state.update;
-    const current = state.meta?.version || '1.1.0';
+    const current = state.meta?.version || '1.1.1';
     if (els.updateDownload) els.updateDownload.hidden = true;
     if (els.updateCheck) {
       els.updateCheck.hidden = false;
@@ -1207,7 +1208,7 @@
     state.update = { ...state.update, status: 'loading' };
     renderUpdateCard();
     try {
-      const result = await api('/api/update-check');
+      const result = await api(options.refresh ? '/api/update-check?refresh=1' : '/api/update-check');
       state.update = {
         status: 'done',
         latest: result.latest || '',
@@ -1222,6 +1223,13 @@
           toast({ icon: 'i-alert', title: 'Could not check for updates', body: result.error, timeout: 6000 });
         }
       } else if (result.available) {
+        if (options.silent && document.hidden && window.arus?.isDesktop && readStore(UPDATE_NOTICE_KEY) !== result.latest) {
+          const say = window.ArusLang?.t || ((value) => value);
+          window.arus.notify(
+            say('Arus update available'),
+            say(`Version ${result.latest} is ready. Open Arus to download it.`)
+          );
+        }
         showUpdateDialog(
           {
             latest: result.latest || '',
@@ -1255,6 +1263,18 @@
       if (state.data?.settings?.checkUpdates === false) return;
       if (state.update.status === 'idle') checkForUpdates({ silent: true });
     }, 3200);
+    window.setInterval(() => {
+      if (state.data?.settings?.checkUpdates === false) return;
+      if (state.update.status === 'loading') return;
+      checkForUpdates({ silent: true });
+    }, UPDATE_INTERVAL_MS);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState !== 'visible') return;
+      if (state.data?.settings?.checkUpdates === false) return;
+      if (state.update.status === 'loading') return;
+      if (Date.now() - (state.update.checkedAt || 0) < UPDATE_INTERVAL_MS) return;
+      checkForUpdates({ silent: true });
+    });
   }
 
   function maybeFirstRun() {
@@ -3299,7 +3319,7 @@
     els.aboutSupport.addEventListener('click', openSupportDialog);
     els.aboutGithub.addEventListener('click', () => openExternal(REPO_URL));
     els.aboutDiscord.addEventListener('click', () => openExternal(DISCORD_URL));
-    els.updateCheck.addEventListener('click', () => checkForUpdates());
+    els.updateCheck.addEventListener('click', () => checkForUpdates({ refresh: true }));
     els.updateDownload.addEventListener('click', () => openExternal(state.update.url));
     els.updateClose.addEventListener('click', closeUpdateDialog);
     els.updateLater.addEventListener('click', closeUpdateDialog);
