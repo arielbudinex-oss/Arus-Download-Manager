@@ -1793,7 +1793,12 @@ thead th.col-arus { color: var(--accent); }
     inset: -8px -2px;
   }
   .icon-btn { width: 44px; height: 44px; }
-  .nav .btn-sm { height: 44px; padding: 0 16px; }
+  .nav .btn-sm { position: relative; height: 36px; padding: 0 12px; }
+  .nav .btn-sm::before {
+    content: "";
+    position: absolute;
+    inset: -4px -2px;
+  }
   .dialog-close { width: 36px; height: 36px; }
 }
 
@@ -1815,6 +1820,6 @@ thead th.col-arus { color: var(--accent); }
   .brand { gap: 7px; font-size: 15px; }
   .brand img { width: 24px; height: 24px; }
   .nav-actions { gap: 4px; }
-  .nav .btn-sm { padding: 0 10px; gap: 0; font-size: 12.5px; }
+  .nav .btn-sm { height: 34px; padding: 0 10px; gap: 0; font-size: 12px; }
   .nav .btn-sm svg { display: none; }
 }
