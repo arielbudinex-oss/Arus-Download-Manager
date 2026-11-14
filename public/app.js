@@ -1154,7 +1154,7 @@
     }
     if (info.status === 'done' && info.available) {
       els.updateTitle.textContent = `Arus ${info.latest} is available`;
-      els.updateNote.textContent = `You are on ${current}. Download the new installer from GitHub.`;
+      els.updateNote.textContent = `You are on ${current}. Download the new installer from the Arus website.`;
       if (els.updateDownload) els.updateDownload.hidden = false;
       if (els.updateCheck) els.updateCheck.hidden = true;
       return;
@@ -1198,9 +1198,8 @@
   }
 
   function openUpdateRelease() {
-    const url = state.update.url || `${REPO_URL}/releases/latest`;
     closeUpdateDialog();
-    openExternal(url);
+    openExternal(`${SITE_URL}/`);
   }
 
   async function checkForUpdates(options = {}) {
@@ -3320,7 +3319,7 @@
     els.aboutGithub.addEventListener('click', () => openExternal(REPO_URL));
     els.aboutDiscord.addEventListener('click', () => openExternal(DISCORD_URL));
     els.updateCheck.addEventListener('click', () => checkForUpdates({ refresh: true }));
-    els.updateDownload.addEventListener('click', () => openExternal(state.update.url));
+    els.updateDownload.addEventListener('click', openUpdateRelease);
     els.updateClose.addEventListener('click', closeUpdateDialog);
     els.updateLater.addEventListener('click', closeUpdateDialog);
     els.updateGo.addEventListener('click', openUpdateRelease);

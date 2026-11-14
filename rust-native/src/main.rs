@@ -56,13 +56,21 @@ const BRIDGE_SCRIPT: &str = r#"
 
 const POPUP_BRIDGE: &str = r#"
 (() => {
-  window.arusPopupClose = () => {
+  const invoke = (action) => {
     const internals = window.__TAURI_INTERNALS__;
-    if (!internals || typeof internals.invoke !== 'function') {
-      window.close();
-      return;
-    }
-    internals.invoke('window_action', { action: 'close' }).catch(() => window.close());
+    if (!internals || typeof internals.invoke !== 'function') return null;
+    return internals.invoke('window_action', { action });
+  };
+  window.arusPopupClose = () => {
+    const pending = invoke('close');
+    if (pending) pending.catch(() => window.close());
+    else window.close();
+  };
+  window.arusPopupReady = () => {
+    setTimeout(() => {
+      const pending = invoke('show');
+      if (pending) pending.catch(() => {});
+    }, 80);
   };
 })();
 "#;
@@ -86,6 +94,7 @@ fn window_action(action: String, window: tauri::WebviewWindow) -> Result<(), Str
             }
         }
         "drag" => window.start_dragging(),
+        "show" => window.show(),
         _ => Ok(()),
     };
     result.map_err(|err| err.to_string())
@@ -289,6 +298,30 @@ fn resolve_dir(exe_dir: &Path, name: &str) -> PathBuf {
     portable
 }
 
+fn cdp_browser_args() -> Option<String> {
+    std::env::var("ARUS_CDP_PORT").ok().map(|port| {
+        format!(
+            "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection --autoplay-policy=no-user-gesture-required --remote-debugging-port={port}"
+        )
+    })
+}
+
+fn webview_data_dir() -> Option<std::path::PathBuf> {
+    std::env::var_os("ARUS_WEBVIEW_DATA").map(std::path::PathBuf::from)
+}
+
+fn tune_builder<'a, R: tauri::Runtime, M: tauri::Manager<R>>(
+    mut builder: WebviewWindowBuilder<'a, R, M>,
+) -> WebviewWindowBuilder<'a, R, M> {
+    if let Some(dir) = webview_data_dir() {
+        builder = builder.data_directory(dir);
+    }
+    if let Some(args) = cdp_browser_args() {
+        builder = builder.additional_browser_args(&args);
+    }
+    builder
+}
+
 fn open_main(app: &tauri::AppHandle) {
     if let Some(window) = app.get_webview_window("main") {
         let _ = window.show();
@@ -303,29 +336,32 @@ fn open_main(app: &tauri::AppHandle) {
     let Ok(parsed) = url::Url::parse(&backend.url) else {
         return;
     };
-    let built = WebviewWindowBuilder::new(app, "main", WebviewUrl::External(parsed))
+    let studio_opaque = std::env::var("ARUS_OPAQUE_WINDOW").as_deref() == Ok("1");
+    let builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::External(parsed))
         .title("Arus")
         .inner_size(1160.0, 720.0)
         .min_inner_size(760.0, 500.0)
         .center()
         .decorations(false)
-        .transparent(true)
-        .initialization_script(BRIDGE_SCRIPT)
-        .build();
+        .transparent(!studio_opaque)
+        .initialization_script(BRIDGE_SCRIPT);
+    let built = tune_builder(builder).build();
     match built {
         Ok(window) => {
-            let effects = WindowEffectsConfig {
-                effects: vec![WindowEffect::Acrylic],
-                state: None,
-                radius: None,
-                color: Some(tauri::window::Color(20, 22, 24, 170)),
-                interactive: false,
-            };
-            if let Err(err) = window.set_effects(effects) {
-                let _ = std::fs::write(
-                    std::env::temp_dir().join("arus-effects-error.txt"),
-                    format!("{err:#?}"),
-                );
+            if !studio_opaque {
+                let effects = WindowEffectsConfig {
+                    effects: vec![WindowEffect::Acrylic],
+                    state: None,
+                    radius: None,
+                    color: Some(tauri::window::Color(20, 22, 24, 170)),
+                    interactive: false,
+                };
+                if let Err(err) = window.set_effects(effects) {
+                    let _ = std::fs::write(
+                        std::env::temp_dir().join("arus-effects-error.txt"),
+                        format!("{err:#?}"),
+                    );
+                }
             }
             #[cfg(windows)]
             set_backdrop_dark(&window, true);
@@ -391,7 +427,7 @@ fn show_complete_popup(app: &tauri::AppHandle, notice: engine::CompletedNotice) 
     } else {
         tauri::window::Color(20, 22, 26, 255)
     };
-    let built = WebviewWindowBuilder::new(app, label.clone(), WebviewUrl::External(parsed))
+    let builder = WebviewWindowBuilder::new(app, label.clone(), WebviewUrl::External(parsed))
         .title("Arus")
         .inner_size(width, height)
         .resizable(false)
@@ -405,15 +441,8 @@ fn show_complete_popup(app: &tauri::AppHandle, notice: engine::CompletedNotice) 
         .visible(false)
         .background_color(background)
         .position(x, y)
-        .on_page_load(|window, payload| {
-            if matches!(payload.event(), tauri::webview::PageLoadEvent::Finished)
-                && payload.url().scheme() != "about"
-            {
-                let _ = window.show();
-            }
-        })
-        .initialization_script(POPUP_BRIDGE)
-        .build();
+        .initialization_script(POPUP_BRIDGE);
+    let built = tune_builder(builder).build();
     if built.is_err() {
         return;
     }
@@ -482,7 +511,7 @@ fn show_progress_popup(app: &tauri::AppHandle, notice: engine::StartedNotice) {
     } else {
         tauri::window::Color(20, 22, 26, 255)
     };
-    let built = WebviewWindowBuilder::new(app, label.clone(), WebviewUrl::External(parsed))
+    let builder = WebviewWindowBuilder::new(app, label.clone(), WebviewUrl::External(parsed))
         .title("Arus")
         .inner_size(width, height)
         .resizable(false)
@@ -496,15 +525,8 @@ fn show_progress_popup(app: &tauri::AppHandle, notice: engine::StartedNotice) {
         .visible(false)
         .background_color(background)
         .position(x, y)
-        .on_page_load(|window, payload| {
-            if matches!(payload.event(), tauri::webview::PageLoadEvent::Finished)
-                && payload.url().scheme() != "about"
-            {
-                let _ = window.show();
-            }
-        })
-        .initialization_script(POPUP_BRIDGE)
-        .build();
+        .initialization_script(POPUP_BRIDGE);
+    let built = tune_builder(builder).build();
     if built.is_err() {
         return;
     }
@@ -718,6 +740,11 @@ fn main() {
                     let inner = hook_handle.clone();
                     let _ = dispatcher.run_on_main_thread(move || {
                         if let Some(error) = notice.error.as_deref() {
+                            if let Some(window) = inner
+                                .get_webview_window(&format!("progress-{}", notice.id))
+                            {
+                                let _ = window.destroy();
+                            }
                             use tauri_plugin_notification::NotificationExt;
                             let _ = inner
                                 .notification()

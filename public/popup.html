@@ -392,6 +392,7 @@
       });
 
       schedule();
+      if (typeof window.arusPopupReady === 'function') window.arusPopupReady();
     })();
   </script>
 </body>

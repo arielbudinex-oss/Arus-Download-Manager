@@ -472,6 +472,7 @@
 
       poll();
       setInterval(poll, 500);
+      if (typeof window.arusPopupReady === 'function') window.arusPopupReady();
     })();
   </script>
 </body>
