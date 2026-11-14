@@ -355,7 +355,7 @@
     'Video': 'Videos',
     'Bahasa': 'Languages',
     'Format': 'Format',
-    'Video mengikuti bahasa situs: Indonesia atau Inggris. Rekaman aplikasi asli, tanpa share link, nama perangkat, atau folder pribadi.': 'Videos follow the site language: Indonesian or English. Real app recordings, with no share links, device names, or personal folders.',
+    'Video mengikuti bahasa situs: Indonesia atau Inggris. Rekaman aplikasi asli, dengan detail sensitif seperti tautan berbagi dan alamat jaringan disamarkan.': 'Videos follow the site language: Indonesian or English. Real app recordings, with sensitive details such as share links and network addresses masked.',
     'Daftar bab': 'Chapters',
     'Kembali ke atas': 'Back to top',
     'Tutorial video': 'Video tutorials',
