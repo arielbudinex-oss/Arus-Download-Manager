@@ -1,0 +1,62 @@
+WEBVTT
+
+1
+00:00:00.000 --> 00:00:02.570
+Got a lot of links to download at once?
+
+2
+00:00:02.570 --> 00:00:05.602
+Open the Batch tab in the New download window.
+
+3
+00:00:05.602 --> 00:00:07.183
+Paste one link per line.
+
+4
+00:00:07.183 --> 00:00:11.862
+Make sure each link is on its own line so it's read as a separate item.
+
+5
+00:00:11.862 --> 00:00:14.432
+Arus accepts up to fifty links at once.
+
+6
+00:00:14.432 --> 00:00:19.704
+Each one becomes its own download, with the same folder and connection settings.
+
+7
+00:00:19.704 --> 00:00:23.856
+You can set priority or a speed cap after they're in the queue.
+
+8
+00:00:23.856 --> 00:00:27.283
+For video on a web page, switch to the Web page tab.
+
+9
+00:00:27.283 --> 00:00:29.919
+Paste the page address, then click Scan.
+
+10
+00:00:29.919 --> 00:00:34.730
+Arus reads the page and lists the video, audio, and HLS sources it finds.
+
+11
+00:00:34.730 --> 00:00:36.378
+Pick the source you need.
+
+12
+00:00:36.378 --> 00:00:39.607
+Arus downloads it as a file that's ready to play.
+
+13
+00:00:39.607 --> 00:00:43.627
+Once added, every item can be managed like a normal download.
+
+14
+00:00:43.627 --> 00:00:48.174
+Batch and Scan turn a job full of clicks into a much faster workflow.
+
+15
+00:00:48.174 --> 00:00:52.062
+It's handy for study materials, archives, or project files.
+

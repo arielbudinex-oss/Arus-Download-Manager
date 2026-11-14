@@ -32,6 +32,12 @@
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=86400, stale-while-revalidate=604800" }
       ]
+    },
+    {
+      "source": "/assets/tutorials/(.*).vtt",
+      "headers": [
+        { "key": "Content-Type", "value": "text/vtt; charset=utf-8" }
+      ]
     }
   ],
   "functions": {

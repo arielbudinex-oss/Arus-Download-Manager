@@ -1,0 +1,58 @@
+WEBVTT
+
+1
+00:00:00.000 --> 00:00:05.319
+When a download finishes, you can check that the file wasn't changed or corrupted.
+
+2
+00:00:05.319 --> 00:00:08.951
+Open the download details and find the checksum section.
+
+3
+00:00:08.951 --> 00:00:11.091
+Click Compute to start the check.
+
+4
+00:00:11.091 --> 00:00:15.761
+Arus reads the saved file and calculates the S H A, two fifty-six, code.
+
+5
+00:00:15.761 --> 00:00:18.356
+This can take a moment for a large file.
+
+6
+00:00:18.356 --> 00:00:21.793
+When it's done, the code appears on the details page.
+
+7
+00:00:21.793 --> 00:00:25.880
+Copy it and compare it with the code from the file's publisher.
+
+8
+00:00:25.880 --> 00:00:29.317
+If they match, the file is identical and safe to use.
+
+9
+00:00:29.317 --> 00:00:33.533
+Save the matching code as a note, especially for important files.
+
+10
+00:00:33.533 --> 00:00:37.879
+If they differ, the file may be damaged or changed during download.
+
+11
+00:00:37.879 --> 00:00:42.095
+This check is useful for installers, archives, or work documents.
+
+12
+00:00:42.095 --> 00:00:45.598
+Most importantly, the process runs locally on your PC.
+
+13
+00:00:45.598 --> 00:00:48.062
+No file or code is sent to any server.
+
+14
+00:00:48.062 --> 00:00:51.435
+So you can check sensitive files with peace of mind.
+

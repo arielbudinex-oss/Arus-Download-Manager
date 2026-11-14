@@ -340,6 +340,28 @@
     'membuka pengaturan.': 'opens settings.'
   });
 
+  Object.assign(DICT, {
+    /* tutorial page */
+    'Tutorial Arus · 8 bab video': 'Arus tutorials · 8 video chapters',
+    '8 bab · 16 video': '8 chapters · 16 videos',
+    'Dari unduhan pertama,': 'From your first download,',
+    'sampai berbagi ke ponsel.': 'to sharing with your phone.',
+    'Delapan bab, direkam dari aplikasi Arus yang asli. Setiap video punya langkah singkat, subtitle, dan transkrip yang bisa diklik.': 'Eight chapters, recorded from the real Arus app. Every video includes short steps, subtitles, and a clickable transcript.',
+    'Cara pakai': 'How to use',
+    'Pilih bab dari daftar.': 'Pick a chapter from the list.',
+    'Putar video. Subtitle aktif otomatis.': 'Play the video. Subtitles start by default.',
+    'Buka transkrip untuk melompat ke bagian tertentu.': 'Open the transcript to jump to a specific part.',
+    'Bab': 'Chapters',
+    'Video': 'Videos',
+    'Bahasa': 'Languages',
+    'Format': 'Format',
+    'Video mengikuti bahasa situs: Indonesia atau Inggris. Rekaman aplikasi asli, tanpa share link, nama perangkat, atau folder pribadi.': 'Videos follow the site language: Indonesian or English. Real app recordings, with no share links, device names, or personal folders.',
+    'Daftar bab': 'Chapters',
+    'Kembali ke atas': 'Back to top',
+    'Tutorial video': 'Video tutorials',
+    'Buka panduan lengkap': 'Open the full guide'
+  });
+
   const RULES = [
     [/^([\d.,]+) unduhan$/i, '$1 downloads'],
     [/^segmen (\d+)$/i, 'segment $1'],

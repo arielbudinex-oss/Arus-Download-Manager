@@ -1,0 +1,58 @@
+WEBVTT
+
+1
+00:00:00.000 --> 00:00:03.843
+Kadang unduhan besar tidak boleh menghabiskan seluruh koneksi.
+
+2
+00:00:03.843 --> 00:00:07.500
+Karena itu, Arus punya batas kecepatan yang bisa kamu atur.
+
+3
+00:00:07.500 --> 00:00:10.165
+Buka Pengaturan, lalu masuk ke tab Unduhan.
+
+4
+00:00:10.165 --> 00:00:12.335
+Di sana ada Batas kecepatan global.
+
+5
+00:00:12.335 --> 00:00:17.666
+Ubah angkanya sesuai kebutuhan, misalnya saat kamu sedang meeting atau menonton video.
+
+6
+00:00:17.666 --> 00:00:21.757
+Batas global berguna saat ada beberapa unduhan berjalan bersamaan.
+
+7
+00:00:21.757 --> 00:00:27.087
+Arus langsung menyesuaikan semua transfer yang sedang berjalan, tanpa menghentikannya.
+
+8
+00:00:27.087 --> 00:00:30.992
+Untuk file tertentu, buka detail unduhan dan atur batas khusus.
+
+9
+00:00:30.992 --> 00:00:36.323
+Batas per file ini bekerja di bawah batas global, jadi kamu tetap punya kendali penuh.
+
+10
+00:00:36.323 --> 00:00:41.158
+Prioritas juga bisa diatur saat menambah unduhan: tinggi, normal, atau rendah.
+
+11
+00:00:41.158 --> 00:00:44.443
+Item prioritas tinggi keluar dari antrean lebih dulu.
+
+12
+00:00:44.443 --> 00:00:49.092
+Dengan begitu, file penting selesai lebih cepat tanpa mengganggu file lain.
+
+13
+00:00:49.092 --> 00:00:54.112
+Kalau ingin kembali ke kecepatan penuh, ubah batasnya ke angka yang lebih tinggi.
+
+14
+00:00:54.112 --> 00:00:57.522
+Coba atur satu unduhan besar, lalu bandingkan hasilnya.
+

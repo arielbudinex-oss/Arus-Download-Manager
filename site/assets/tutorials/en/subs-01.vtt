@@ -1,0 +1,70 @@
+WEBVTT
+
+1
+00:00:00.000 --> 00:00:04.990
+Arus splits large files into several parts and downloads them at the same time.
+
+2
+00:00:04.990 --> 00:00:09.097
+That keeps transfers fast, even when a file is several gigabytes.
+
+3
+00:00:09.097 --> 00:00:11.497
+Click New download in the main window.
+
+4
+00:00:11.497 --> 00:00:13.708
+Paste the file link into the field.
+
+5
+00:00:13.708 --> 00:00:17.119
+Choose a save folder, and rename the file if you like.
+
+6
+00:00:17.119 --> 00:00:20.910
+Arus adds it to the queue and splits the file automatically.
+
+7
+00:00:20.910 --> 00:00:24.384
+You don't have to manage parts or connections yourself.
+
+8
+00:00:24.384 --> 00:00:25.963
+Need to stop for a while?
+
+9
+00:00:25.963 --> 00:00:28.932
+Press Pause, then Resume whenever you're ready.
+
+10
+00:00:28.932 --> 00:00:31.270
+Arus continues without starting over.
+
+11
+00:00:31.270 --> 00:00:36.955
+Every download has a details page with speed, time left, size, and the connections in use.
+
+12
+00:00:36.955 --> 00:00:40.177
+Click any download to open its details at any time.
+
+13
+00:00:40.177 --> 00:00:44.093
+You can also open the save folder right from the details page.
+
+14
+00:00:44.093 --> 00:00:48.578
+When it finishes, a notification appears and the file is ready to open.
+
+15
+00:00:48.578 --> 00:00:52.432
+Your history stays tidy, with search and categories built in.
+
+16
+00:00:52.432 --> 00:00:55.780
+Use search or categories to find older files quickly.
+
+17
+00:00:55.780 --> 00:00:59.507
+Big files stay easy to manage, even when the queue is busy.
+
